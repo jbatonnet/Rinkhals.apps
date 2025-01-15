@@ -1,0 +1,13 @@
+{
+    "$version": "1",
+
+    "name": "Tailscale",
+    "description": "Tailscale client to directly connect to your Tailscale network",
+    "version": "0.1",
+    
+    "requirements":
+    {
+        "cpu": 10,
+        "memory": 10
+    }
+}
