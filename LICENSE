@@ -25,4 +25,6 @@ All my scripts / code is provided under this license:
 
 All existing code / binaries / projects are provided here under their own license, such as but not limited to:
 
-- X
+- apps/\*/lib/python*/site-packages/* > Corresponding module licenses
+- apps/octoapp/octoapp/* > https://github.com/crysxd/OctoApp-Plugin/blob/release/LICENSE
+- icon.png > https://www.flaticon.com/free-icons/snake
