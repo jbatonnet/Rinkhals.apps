@@ -1,0 +1,11 @@
+{
+  "name": "vscode-regexp-languagedetection",
+  "version": "1.0.0",
+  "description": "Language detection for VSCode powered by regular expressions. Trained on data from GitHub and RosettaCode.",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Jackson Kearl <jakearl@microsoft.com>"
+}

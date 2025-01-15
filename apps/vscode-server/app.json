@@ -1,0 +1,7 @@
+{
+    "$version": "1",
+
+    "name": "Visual Studio Code server",
+    "description": "Server for Visual Studio Code to allow remoting directly into the printer",
+    "version": "0.1"
+}

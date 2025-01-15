@@ -1,0 +1,35 @@
+{
+  "name": "vsda",
+  "description": "VS Code debug handshake module",
+  "version": "1.4.1",
+  "author": {
+    "name": "Microsoft"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "esbuild": "^0.17.19",
+    "mocha": "^6.1.4",
+    "rimraf": "^5.0.0"
+  },
+  "homepage": "https://github.com/Microsoft/vscode",
+  "main": "index.js",
+  "browser": "rust/web/vsda.js",
+  "types": "index.d.ts",
+  "os": [
+    "win32",
+    "linux",
+    "darwin"
+  ],
+  "scripts": {
+    "build": "node-gyp build",
+    "configure": "node-gyp configure",
+    "install": "node-gyp rebuild",
+    "test": "mocha test.js",
+    "test-rust": "cd rust && cargo test",
+    "build-wasm": "yarn test-rust && yarn build-wasm-compile && mocha rust/test.js && yarn build-wasm-encrypt && yarn build-wasm-convert-to-iife && rimraf rust/web/.gitignore rust/nodejs",
+    "build-wasm-compile": "yarn build-wasm-base -- --target nodejs --out-dir nodejs --features wasm && yarn build-wasm-base -- --target web --out-dir web --features wasm",
+    "build-wasm-encrypt": "node rust/crypt encrypt rust/web/vsda_bg.wasm",
+    "build-wasm-convert-to-iife": "esbuild ./rust/web/vsda.js --format=iife --platform=browser --outfile=rust/web/vsda.js --allow-overwrite --global-name=vsda_web",
+    "build-wasm-base": "cd rust && cross-env WASM_BINDGEN_WEAKREF=1 wasm-pack build --release"
+  }
+}

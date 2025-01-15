@@ -1,0 +1,106 @@
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+trigger: # cause a pipeline to run whenever you push an update to the specified branches
+  batch: true
+  branches:
+    include:
+      - main
+
+parameters:
+- name: Publish
+  displayName: Push to public npm feed?
+  type: boolean
+  default: false
+
+variables:
+  TeamName: 'Visual Studio Technical Insights'
+
+# The `resources` specify the location and version of the 1ES PT.
+resources:
+  repositories:
+  - repository: MicrobuildTemplate
+    type: git
+    name: 1ESPipelineTemplates/MicroBuildTemplate
+    ref: refs/heads/release
+
+extends:
+  # The pipeline extends the 1ES PT which will inject different SDL and compliance tasks.
+  # For non-production pipelines, use "Unofficial" as defined below.
+  # For productions pipelines, use "Official".
+  template: /azure-pipelines/MicroBuild.1ES.Official.Publish.yml@MicroBuildTemplate
+  parameters:
+    customBuildTags:
+    - Ignore-Tag
+    pool:
+      name: VSEngSS-MicroBuild2022-1ES
+      os: windows  # OS of the image. Allowed values: windows, linux, macOS
+    
+    stages:
+    - stage: BuildAndPublishNpmPackage
+      jobs:
+      - job: BuildAndPublish
+        templateContext:
+          mb:
+            signing:
+              enabled: true
+              signType: Test
+              zipSources: false
+        displayName: Build and publish npm package
+
+        steps:
+        - task: NodeTool@0
+          inputs:
+            versionSpec: '17.x'
+          displayName: 'Install Node.js'
+
+        # lock to older version of python. We need diskutils which was removed in Python 3.12
+        - task: UsePythonVersion@0
+          inputs:
+            versionSpec: '3.11'
+
+        - script: |
+            npm ci
+          displayName: 'Install dependencies'
+
+        - script: |
+            npm run build
+          displayName: 'Compile npm package'
+
+        # Commenting out until we have tests
+        # - script: |
+        #     npm run test
+        #   displayName: 'Test npm package'
+        
+        - powershell: | 
+            New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)\npmpackages" -Force
+          displayName: Create npm package directory
+
+        - script: | 
+            npm pack --pack-destination "$(Build.ArtifactStagingDirectory)\npmpackages"
+          displayName: 'Create npm package' 
+
+        - powershell: | 
+            Get-ChildItem -Path "$(Build.ArtifactStagingDirectory)\npmpackages"
+          displayName: Get contents of $(Build.ArtifactStagingDirectory)\npmpackages
+
+        - ${{ if parameters.Publish }}:
+          - template: /azure-pipelines/MicroBuild.Publish.yml@MicroBuildTemplate
+            parameters: 
+              intent: 'PackageDistribution'
+              contentType: 'npm'
+              contentSource: 'Folder'
+              folderLocation: '$(Build.ArtifactStagingDirectory)\npmpackages'
+              waitForReleaseCompletion: true
+              owners: 'piel@microsoft.com'
+              approvers: 'rdawson@microsoft.com'
+
+        - task: 1ES.PublishPipelineArtifact@1
+          inputs:
+            targetPath: '$(Build.ArtifactStagingDirectory)'
+            artifactName: output
+
+        - task: TSAUpload@2
+          inputs:
+            GdnPublishTsaOnboard: true
+            GdnPublishTsaConfigFile: '$(Build.SourcesDirectory)/.config/TSAOptions.json'
+          displayName: 'TSA upload to Codebase (vscode-deviceid)'

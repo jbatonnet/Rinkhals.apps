@@ -1,0 +1,45 @@
+{
+    "name": "@microsoft/1ds-post-js",
+    "version": "3.2.13",
+    "description": "Microsoft Application Insights JavaScript SDK - 1ds-post-js extensions",
+    "author": "Microsoft Application Insights Team",
+    "homepage": "https://github.com/microsoft/ApplicationInsights-JS#readme",
+    "license": "MIT",
+    "sideEffects": false,
+    "scripts": {
+        "ai-min": "grunt post-min",
+        "ai-restore": "grunt post-restore",
+        "publishPackage": "npm publish",
+        "sri": "node ../../tools/subResourceIntegrity/generateIntegrityFile.js",
+        "npm-pack": "npm pack"
+    },
+    "publishConfig": {
+        "registry": "https://registry.npmjs.org"
+    },
+    "dependencies": {
+        "@microsoft/applicationinsights-shims": "^2.0.2",
+        "@microsoft/dynamicproto-js": "^1.1.7",
+        "@microsoft/1ds-core-js": "3.2.13"
+    },
+    "devDependencies": {
+        "grunt": "^1.4.1",
+        "typescript": "^4.3.5"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/microsoft/ApplicationInsights-JS"
+    },
+    "main": "dist/ms.post.js",
+    "module": "dist-esm/src/Index.js",
+    "keywords": [
+        "1ds",
+        "azure",
+        "cloud",
+        "script errors",
+        "microsoft",
+        "application insights",
+        "Js",
+        "SDK"
+    ],
+    "types": "dist-esm/src/Index.d.ts"
+}

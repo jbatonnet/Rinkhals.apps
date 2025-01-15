@@ -1,0 +1,15 @@
+steps:
+- task: NodeTool@0
+  inputs:
+    versionSpec: "18.x"
+
+- powershell: |
+    git submodule update --init
+    $env:npm_config_arch="$(NPM_ARCH)"
+    npm install
+  displayName: Install Dependencies
+
+- powershell: |
+    npm test
+  displayName: Run Tests
+  condition: eq(variables.NPM_ARCH, 'x64')

@@ -1,0 +1,26 @@
+{
+    "name": "applicationinsights-core-js",
+    "version": "2.8.15",
+    "ext": {
+        "@js": {
+            "file": "applicationinsights-core-js.js",
+            "type": "text/javascript; charset=utf-8",
+            "integrity": "sha256-VpB8AeaGXxGep7XcWSpIV5g/djdpwJHI5qemIvAA5Ls= sha384-G26swjnl9Iqy8E4tyYDI5o5wrv49USxFmhTAbH0O6hIME5SNliKsBDsU9ev23phM sha512-BvYVbKTsJRF9p8cQ6zX1l0AmETW97Jy8T8EoxR/L9a+2VwIfAKWpOV1WG3CysFF+ger942vU9T1O7H1Yi57iMg==",
+            "hashes": {
+                "sha256": "VpB8AeaGXxGep7XcWSpIV5g/djdpwJHI5qemIvAA5Ls=",
+                "sha384": "G26swjnl9Iqy8E4tyYDI5o5wrv49USxFmhTAbH0O6hIME5SNliKsBDsU9ev23phM",
+                "sha512": "BvYVbKTsJRF9p8cQ6zX1l0AmETW97Jy8T8EoxR/L9a+2VwIfAKWpOV1WG3CysFF+ger942vU9T1O7H1Yi57iMg=="
+            }
+        },
+        "@min.js": {
+            "file": "applicationinsights-core-js.min.js",
+            "type": "text/javascript; charset=utf-8",
+            "integrity": "sha256-vCTPei5EOVyLWqp52b4mbfiC68bv/JSyc9qmSeZgEM0= sha384-IgSDiGUXysG9kL5oLLiAxrpqKyuWF4zdtmAkFxYqw7QkxAA2wvwKV40TMzD0MY0r sha512-gDjJl2/SSF3gNjYOhq1//XGn3wRI4wGwpxKC+uKBOGVYQGF+o9y9afOoDu42K44R/ukG6KALYtKqOIt5lSmBDw==",
+            "hashes": {
+                "sha256": "vCTPei5EOVyLWqp52b4mbfiC68bv/JSyc9qmSeZgEM0=",
+                "sha384": "IgSDiGUXysG9kL5oLLiAxrpqKyuWF4zdtmAkFxYqw7QkxAA2wvwKV40TMzD0MY0r",
+                "sha512": "gDjJl2/SSF3gNjYOhq1//XGn3wRI4wGwpxKC+uKBOGVYQGF+o9y9afOoDu42K44R/ukG6KALYtKqOIt5lSmBDw=="
+            }
+        }
+    }
+}

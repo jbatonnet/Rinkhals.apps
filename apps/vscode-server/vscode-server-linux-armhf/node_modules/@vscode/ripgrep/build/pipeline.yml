@@ -1,0 +1,46 @@
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  branches:
+    include:
+      - main
+pr: none
+
+resources:
+  repositories:
+    - repository: templates
+      type: github
+      name: microsoft/vscode-engineering
+      ref: main
+      endpoint: Monaco
+
+parameters:
+  - name: publishPackage
+    displayName: 🚀 Publish @vscode/ripgrep
+    type: boolean
+    default: false
+
+extends:
+  template: azure-pipelines/npm-package/pipeline.yml@templates
+  parameters:
+    npmPackages:
+      - name: ripgrep
+
+        buildPlatforms:
+          - name: Linux
+            nodeVersions:
+              - 18.x
+          - name: MacOS
+            nodeVersions:
+              - 18.x
+          - name: Windows
+            nodeVersions:
+              - 18.x
+
+        buildSteps:
+          - script: npm i
+            displayName: Install dependencies
+            env:
+              GITHUB_TOKEN: $(github-token-public-repos)
+
+        publishPackage: ${{ parameters.publishPackage }}

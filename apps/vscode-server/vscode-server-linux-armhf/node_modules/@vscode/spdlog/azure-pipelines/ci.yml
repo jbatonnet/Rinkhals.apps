@@ -1,0 +1,30 @@
+trigger:
+  branches:
+    include: ['*']
+  tags:
+    include: ['*']
+
+jobs:
+- job: Windows
+  pool:
+    vmImage: 'windows-latest'
+  variables:
+    NPM_ARCH: 'x64'
+  steps:
+  - template: build.yml
+
+- job: macOS
+  pool:
+    vmImage: 'macOS-latest'
+  variables:
+    NPM_ARCH: 'x64'
+  steps:
+  - template: build.yml
+
+- job: Linux
+  pool:
+    vmImage: 'Ubuntu-latest'
+  variables:
+    NPM_ARCH: 'x64'
+  steps:
+  - template: build.yml
