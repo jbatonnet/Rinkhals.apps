@@ -66,6 +66,8 @@ The **app.sh** script must provide 3 actions, passed as first parameter:
     This function takes 2 parameters:
     - The status, using the provided constants `$APP_STATUS_STARTED` or `$APP_STATUS_STOPPED`
     - (optional) The PIDs of the running processes for this app. You can use `PIDS=$(get_by_name my_process)` to easily get the PIDs. This will allow Rinkhals to provide some live app metrics to the user
+- `./app.sh start` to start the app. No additional parameters are allowed since apps will be started automatically during startup. This call is supposed to be non blocking, and start separated processes for the app being started. A timeout of 5 seconds is applied while starting the app from the touch UI or during startup.
+- `./app.sh stop` to stop/kill the app. No additional parameters are allowed since apps will be started automatically during startup. This call is supposed to be non blocking. If processes or services need to stop, they have to stop very quickly or they should be killed instead.
 
 You can check **apps/example/app.sh** in this repo, it is a simple example to demonstrate how to implement apps.
 
