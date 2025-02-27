@@ -1,0 +1,14 @@
+{
+    "$version": "1",
+
+    "name": "Cloudflare Tunnel",
+    "description": "Manages Cloudflare tunnels for remote access to the printer",
+    "version": "1.0",
+    "depends": [],
+
+    "requirements":
+    {
+        "cpu": 5,
+        "memory": 50
+    }
+}

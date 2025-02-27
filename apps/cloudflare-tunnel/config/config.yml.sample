@@ -1,0 +1,30 @@
+# Cloudflare Tunnel Manager - Sample Configuration
+# IMPORTANT: Rename this file to config.yml and place it in:
+# /useremain/home/rinkhals/apps/cloudflare-tunnel-manager/config/
+
+#############################################
+# MANDATORY FIELDS - Must be configured
+#############################################
+
+# Your Cloudflare tunnel token (from Zero Trust dashboard)
+# This is the only truly essential parameter
+# Get this token when creating a new tunnel in the Cloudflare Zero Trust interface
+tunnel: YOUR_TOKEN_HERE
+
+# Credentials file path - DO NOT MODIFY
+credentials-file: /useremain/home/rinkhals/apps/cloudflare-tunnel-manager/config/credentials.json
+
+# Default ingress configuration
+# This redirects your Cloudflare domain to your printer's interface
+# The printer already runs Mainsail/Fluidd with Moonraker
+ingress:
+  # This service points to your printer's web interface (Mainsail/Fluidd)
+  - service: http://localhost:80
+  
+  # Catch-all rule that returns 404 for all other requests - DO NOT REMOVE
+  - service: http_status:404
+
+# Note: If you want more advanced configuration, you can
+# define hostname-specific rules, add security options, etc.
+# Refer to Cloudflare documentation for more options:
+# https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/tunnel-guide/
