@@ -3,7 +3,7 @@ source /useremain/rinkhals/.current/tools.sh
 
 APP_ROOT=$(dirname $(realpath $0))
 CLOUDFLARED_BIN="$APP_ROOT/bin/cloudflared"
-CONFIG_DIR="/useremain/home/rinkhals/apps/cloudflare-tunnel/config"
+CONFIG_DIR="$APP_ROOT/config"
 PID_FILE="/tmp/cloudflared.pid"
 STATUS_FILE="/tmp/cloudflared.status"
 LOG_FILE="$CONFIG_DIR/cloudflared.log"
