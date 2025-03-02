@@ -9,6 +9,6 @@
     "requirements":
     {
         "cpu": 5,
-        "memory": 50
+        "memory": 10
     }
 }

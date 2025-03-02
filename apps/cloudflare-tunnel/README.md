@@ -15,15 +15,15 @@ The app will be installed automatically when added through the Rinkhals app syst
 Before the tunnel can be used, you need to provide your Cloudflare tunnel token:
 
 1. Create a directory for the configuration:
-   ```
-   mkdir -p /useremain/home/rinkhals/apps/cloudflare-tunnel-manager/config
-   ```
 
+   ```
+   mkdir -p /useremain/home/rinkhals/apps/cloudflare-tunnel/config
+   ```
 2. Create a file containing only your tunnel token:
-   ```
-   nano /useremain/home/rinkhals/apps/cloudflare-tunnel-manager/config/token.txt
-   ```
 
+   ```
+   nano /useremain/home/rinkhals/apps/cloudflare-tunnel/config/token.txt
+   ```
 3. Paste your Cloudflare tunnel token into this file (just the token, nothing else) and save.
 
 ### Getting a Cloudflare Tunnel Token
@@ -36,18 +36,19 @@ To configure your tunnel, you'll need to create one in your Cloudflare account:
 4. Click "Create a tunnel"
 5. Give your tunnel a name (e.g., "My 3D Printer")
 6. In the "Install connector" step, you'll see a token in the installation command that looks like:
+
    ```
    cloudflared tunnel --token eyJhIjoiZDc3YWY5NjQ0ZDk1NGEyYjk3NWNiM2ZjZDg5YjVkZTkiLCJ0IjoiYzQ5YjI0ZmItYjRiZC00YWVkLWFmNmEtZWYxODk4ZTA4NWM2IiwicyI6Ik5EWmtNR0poTlRjdFlqY3pNaTAwTmpWakxUZ3pNV010TVdJMk5qWmpNVEU1Wm1VeiJ9
    ```
-   Copy the entire token (the part after `--token`).
 
+   Copy the entire token (the part after `--token`).
 7. In the "Public Hostname" tab, configure your hostname:
+
    - Type: HTTP
    - Subdomain: Choose a subdomain for your printer
    - Domain: Select one of your Cloudflare domains
    - Path: Leave blank or specify a path
    - Service: `http://localhost:80` (or the appropriate port for your printer interface)
-   
 8. Click "Save" to create the tunnel
 
 ### Example token.txt File
@@ -67,7 +68,7 @@ That's it! No additional configuration is needed. All tunnel configuration is ma
 The tunnel will start automatically when the app is started. You can manually start it with:
 
 ```
-/useremain/home/rinkhals/apps/cloudflare-tunnel-manager/app.sh start
+/useremain/home/rinkhals/apps/cloudflare-tunnel/app.sh start
 ```
 
 ### Checking Status
@@ -75,7 +76,7 @@ The tunnel will start automatically when the app is started. You can manually st
 To check if the tunnel is running:
 
 ```
-/useremain/home/rinkhals/apps/cloudflare-tunnel-manager/app.sh status
+/useremain/home/rinkhals/apps/cloudflare-tunnel/app.sh status
 ```
 
 ### Stopping the Tunnel
@@ -83,7 +84,7 @@ To check if the tunnel is running:
 To stop the tunnel:
 
 ```
-/useremain/home/rinkhals/apps/cloudflare-tunnel-manager/app.sh stop
+/useremain/home/rinkhals/apps/cloudflare-tunnel/app.sh stop
 ```
 
 ## Troubleshooting
@@ -91,10 +92,10 @@ To stop the tunnel:
 If you encounter issues:
 
 1. Check the logs:
-   ```
-   cat /useremain/home/rinkhals/apps/cloudflare-tunnel-manager/config/cloudflared.log
-   ```
 
+   ```
+   cat /useremain/home/rinkhals/apps/cloudflare-tunnel/config/cloudflared.log
+   ```
 2. Verify your configuration file is correct
 3. Make sure your token is valid and not expired
 4. Check your internet connection
