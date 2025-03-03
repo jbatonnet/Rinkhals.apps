@@ -28,7 +28,7 @@ jobs:
           name: app-octoapp.swu
           path: |
             build/dist/update.swu
-            
+
   build-cloudflare-tunnel:
     runs-on: ubuntu-latest
     steps:
@@ -38,5 +38,17 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: app-cloudflare-tunnel.swu
+          path: |
+            build/dist/update.swu
+            
+  build-tailscale:        
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          docker run --rm -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/tailscale"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-tailscale.swu
           path: |
             build/dist/update.swu
