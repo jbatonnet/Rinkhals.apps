@@ -1,0 +1,14 @@
+{
+    "$version": "1",
+
+    "name": "Discovery helper",
+    "description": "Improves LAN mode discovery of the printer in Anycubic Slicer Next",
+    "version": "1.0",
+    "depends": [],
+
+    "requirements":
+    {
+        "cpu": 0,
+        "memory": 0
+    }
+}
