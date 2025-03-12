@@ -27,6 +27,6 @@ for APP_ROOT in $(find /apps -type d -mindepth 1 -maxdepth 1); do
     echo "Syncing $APP to /useremain/home/rinkhals/apps/$APP..."
 
     rclone -v sync --absolute \
-        --filter "- /*.log"  --filter "- /.enable" --filter "- /.disable" --filter "+ *" \
+        --filter "- /*.log" --filter "- *.pyc"  --filter "- /.enable" --filter "- /.disable" --filter "+ *" \
         $APP_ROOT Kobra:/useremain/home/rinkhals/apps/$APP
 done
