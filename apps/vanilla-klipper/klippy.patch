@@ -1,0 +1,13 @@
+diff --git klippy/chelper/__init__.py klippy/chelper/__init__.py
+index fa1261be97ee58f778b65d67b08d47429cc34416..626b7a10d84ed58ef3e90cccd2d28b9c66c7cf47 100644
+--- klippy/chelper/__init__.py
++++ klippy/chelper/__init__.py
+@@ -13,7 +13,7 @@ import cffi
+ 
+ GCC_CMD = "gcc"
+ COMPILE_ARGS = ("-Wall -g -O2 -shared -fPIC"
+-                " -flto -fwhole-program -fno-use-linker-plugin"
++                #" -fno-lto -fwhole-program -fno-use-linker-plugin"
+                 " -o %s %s")
+ SSE_FLAGS = "-mfpmath=sse -msse2"
+ SOURCE_FILES = [
