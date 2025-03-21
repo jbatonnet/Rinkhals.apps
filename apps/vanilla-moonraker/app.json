@@ -1,7 +1,7 @@
 {
     "$version": "1",
 
-    "name": "Moonraker",
+    "name": "Moonraker (vanilla)",
     "description": "Web server that exposes APIs with which client applications may use to interact with the 3D printing firmware Klipper.",
     "version": "2025-03-05"
 }
