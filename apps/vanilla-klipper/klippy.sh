@@ -5,17 +5,14 @@ python -m venv --without-pip $APP_ROOT
 source bin/activate
 
 # Prepare configuration
-KLIPPER_CONFIG=printer.klipper_${KOBRA_MODEL_CODE}.cfg
-if [ ! -f $KLIPPER_CONFIG ]; then
+CONFIG_SOURCE=printer.klipper_${KOBRA_MODEL_CODE}.cfg
+if [ ! -f $CONFIG_SOURCE ]; then
     exit 1
 fi
 
-CONFIG_PATH=/userdata/app/gk/printer_data/config/printer.klipper.cfg
-if [ ! -f $CONFIG_PATH ]; then
-    sed '/-- SAVE_CONFIG --/,$d' /userdata/app/gk/printer.cfg > /tmp/printer.1.cfg
-    sed -n '/-- SAVE_CONFIG --/,$p' /userdata/app/gk/printer.cfg > /tmp/printer.2.cfg
-    python /opt/rinkhals/scripts/process-cfg.py /tmp/printer.1.cfg $KLIPPER_CONFIG printer.rinkhals.cfg > $CONFIG_PATH
-    cat /tmp/printer.2.cfg >> $CONFIG_PATH
+CONFIG_DESTINATION=/userdata/app/gk/printer_data/config/printer.klipper.cfg
+if [ ! -f $CONFIG_DESTINATION ]; then
+    cp $CONFIG_SOURCE $CONFIG_DESTINATION
 fi
 
 # Start Klippy
