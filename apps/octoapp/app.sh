@@ -23,7 +23,7 @@ start() {
     OCTOAPP_CONFIG=$(cat <<EOF
 {
     "KlipperConfigFolder": "$RINKHALS_HOME/printer_data/config",
-    "MoonrakerConfigFile": "$RINKHALS_HOME/printer_data/config/moonraker.conf",
+    "MoonrakerConfigFile": "$RINKHALS_HOME/printer_data/config/moonraker.generated.conf",
     "KlipperLogFolder": "$RINKHALS_HOME/printer_data/logs",
     "LocalFileStoragePath": "$RINKHALS_HOME/octoapp",
     "IsObserver": false,
