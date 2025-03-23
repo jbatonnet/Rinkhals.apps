@@ -33,6 +33,8 @@ class NotificationSender:
     STATE_PROGRESS_PERCENT = "progress_percent"
     STATE_DURATION_SEC = "duration_sec"
     STATE_FILE_NAME = "file_name"
+    STATE_ERROR = "error"
+    STATE_FILE_PATH = "file_name"
     STATE_PRINT_ID = "print_id"
 
 
@@ -54,22 +56,25 @@ class NotificationSender:
 
     def SendNotification(self, event, state=None):
         try:
+            helper = AppStorageHelper.Get()
+
             if state is None:
                 state = self.LastPrintState
 
             if event == self.EVENT_DONE:
                 state[NotificationSender.STATE_PROGRESS_PERCENT] = 100
 
-
             self.LastPrintState = state
-            helper = AppStorageHelper.Get()
             Sentry.Info("SENDER", "Preparing notification for %s" % event)
-            onlyActivities = self._shouldSendOnlyActivities(event=event, state=state)
-            targets = self._getPushTargets(
-                preferActivity=self._shouldPreferActivity(event),
-                canUseNonActivity=self._canUseNonActivity(event) and not onlyActivities
-            )
+            priority = self._determinePriority(event=event, state=state)
 
+            # Skip this event
+            if  priority == -1: 
+                return
+
+            targets = self._getPushTargets(event = event)
+
+            onlyActivities = priority == 1
             if onlyActivities:
                 Sentry.Debug("SENDER", "Only activities allowed, filtering")
                 targets = helper.GetActivities(targets)
@@ -82,8 +87,9 @@ class NotificationSender:
             targets = self._processFilters(targets=targets, event=event)
             ios_targets = helper.GetIosApps(targets)
             activity_targets = helper.GetActivities(targets)
+            activity_auto_start_targets = helper.GetActivityAutoStarts(targets) if (event == self.EVENT_STARTED) else []
             android_targets = helper.GetAndroidApps(targets)
-            apnsData = self._createApnsPushData(event, state) if len(ios_targets) or len(activity_targets) else None
+            apnsData = self._createActivityStartData(event, state) if event == self.EVENT_STARTED and len(activity_auto_start_targets) > 0 else (self._createApnsPushData(event, state) if len(ios_targets) or len(activity_targets) else None)
 
             # Some clients might have user interaction disbaled. First send pause so all live activities etc
             if event == self.EVENT_USER_INTERACTION_NEEDED and target_count_before_filter != len(targets):
@@ -105,26 +111,25 @@ class NotificationSender:
                 apnsData=apnsData,
                 androidData=self._createAndroidPushData(event, state)
             )
-
-            # Remove temporary apps after getting targets
-            if event == self.EVENT_CANCELLED or event == self.EVENT_DONE:
-                helper.RemoveTemporaryApps()
         except Exception as e:
             Sentry.ExceptionNoSend("Failed to send notification", e)
+
+        if event in [self.EVENT_DONE, self.EVENT_CANCELLED, self.EVENT_ERROR]:
+            helper.RemoveTemporaryApps()
     
-    def _shouldSendOnlyActivities(self, event, state):
+    def _determinePriority(self, event, state):
         if event == self.EVENT_STARTED:
             self.LastProgressUpdate = time.time()
-            return False
+            return 0
 
         # If the event is not progress, send to all (including time progress)
         elif event != self.EVENT_PROGRESS:
-            return False
+            return 0
         
         # Sanity check
         elif self.CachedConfig is None:
             Sentry.Warn("SENDER", "No config cached!")
-            return True
+            return 1
         
         modulus = self.CachedConfig["updatePercentModulus"]
         highPrecisionStart = self.CachedConfig["highPrecisionRangeStart"]
@@ -137,16 +142,19 @@ class NotificationSender:
             or progress <= highPrecisionStart
             or progress >= (100 - highPrecisionEnd)
         ):
-            Sentry.Debug("SENDER", "Updating progress in main interval: %s" % progress)
+            Sentry.Debug("SENDER", "Updating progress in main interval, sending high priotiy update: %s" % progress)
             self.LastProgressUpdate = time.time()
-            return False
+            return 0
         elif time_since_last > minIntervalSecs:
-            Sentry.Debug("SENDER", "Over %s sec passed since last progress update, sending low priority update" % int(time_since_last))
+            Sentry.Debug("SENDER", "Over %s sec passed since last progress update, sending high priority update" % int(time_since_last))
             self.LastProgressUpdate = time.time()
-            return False
+            return 0
+        elif time_since_last > (minIntervalSecs / 10):
+            Sentry.Debug("SENDER", "Over %s sec passed since last progress update, sending low priority update" % int(time_since_last))
+            return 1
         else:
             Sentry.Debug("SENDER", "Skipping progress update, only %s seconds passed since last" % int(time_since_last))
-            return True
+            return -1
     
     def _processFilters(self, targets, event):
         filterName = None
@@ -194,10 +202,12 @@ class NotificationSender:
                 timeout=float(10), 
                 json=body
             )
+            function_execution_id = r.headers.get("Function-Execution-Id", "N/A")
+
             if r.status_code != requests.codes.ok:
-                raise Exception("Unexpected response code %d: %s" % (r.status_code, r.text))
+                raise Exception("Unexpected response code %d: %s (Execution ID: %s)" % (r.status_code, r.text, function_execution_id))
             else:
-                Sentry.Info("SENDER", "Send to %s was success %s" % (len(targets), r.json()))
+                Sentry.Info("SENDER", "Send to %s was success %s (Execution ID: %s)" % (len(targets), r.json(), function_execution_id))
 
             # Delete invalid tokens
             apps = AppStorageHelper.Get().GetAllApps()
@@ -302,17 +312,14 @@ class NotificationSender:
             }
         
         elif event == self.EVENT_STARTED:
-            return {
-                "alert": {
-                    "title": "%s started to print" % self.PrinterName,
-                    "body": "Open the app to see the progress",
-                    "title-loc-key": "print_notification___start_title",
-                    "title-loc-args": [self.PrinterName],
-                    "loc-key": "print_notification___start_message",
-                    "loc-args": []
-                },
-                "sound": "default",
-            }
+            notificationTitle = "%s started to print" % self.PrinterName
+            notificationTitleKey = "print_notification___start_title"
+            notificationTitleArgs = [self.PrinterName]
+            notificationBody = "Open the app to see the progress"
+            notificationBodyKey = "print_notification___start_message"
+            notificationBodyArgs = []
+            notificationSound = "default"
+            liveActivityState = "printing"
     
         elif event == self.EVENT_PROGRESS or event == self.EVENT_TIME_PROGRESS or event == self.EVENT_RESUME:
             liveActivityState = "printing"
@@ -339,12 +346,21 @@ class NotificationSender:
 
         elif event == self.EVENT_CANCELLED:
             liveActivityState = "cancelled"
+            notificationTitle = "Print on %s cancelled" % self.PrinterName
+            notificationTitleKey = "print_notification___cancelled_title"
+            notificationTitleArgs = [self.PrinterName]
+            notificationBody = state.get(NotificationSender.STATE_FILE_NAME, None)
+            notificationBodyKey = state.get(NotificationSender.STATE_FILE_NAME, None)
+            notificationBodyArgs = []
+            notificationSound = "notification_filament_change.wav"
 
         elif event == self.EVENT_DONE:
             notificationTitle = "%s is done!" % self.PrinterName
             notificationTitleKey = "print_notification___print_done_title"
             notificationTitleArgs = [self.PrinterName]
             notificationBody = state.get(NotificationSender.STATE_FILE_NAME, None)
+            notificationBodyKey = state.get(NotificationSender.STATE_FILE_NAME, None)
+            notificationBodyArgs = []
             notificationSound = "notification_print_done.wav"
             liveActivityState = "completed"
 
@@ -353,6 +369,8 @@ class NotificationSender:
             notificationTitleKey = "print_notification___filament_change_required_title"
             notificationTitleArgs =  [self.PrinterName]
             notificationBody = state.get(NotificationSender.STATE_FILE_NAME, None)
+            notificationBodyKey = state.get(NotificationSender.STATE_FILE_NAME, None)
+            notificationBodyArgs = []
             notificationSound = "notification_filament_change.wav"
             liveActivityState = "filamentRequired"
 
@@ -383,6 +401,11 @@ class NotificationSender:
             liveActivityState = "printing"
 
         elif event == self.EVENT_ERROR:
+            notificationTitle = "%s needs attention!" % self.PrinterName
+            notificationTitleKey = "print_notification___paused_from_gcode_title"
+            notificationTitleArgs = [self.PrinterName]
+            notificationBody = state.get(self.STATE_ERROR, "Print failed")
+            notificationSound = "notification_filament_change.wav"
             liveActivityState = "error"
 
         else:
@@ -391,13 +414,13 @@ class NotificationSender:
 
         # Let's only end the activity on cancel. If we end it on completed the alert isn't shown
         data = self._createActivityContentState(
-            isEnd=event == self.EVENT_CANCELLED,
+            isEnd=event == self.EVENT_CANCELLED or event == self.EVENT_ERROR or event == self.EVENT_DONE,
             state=state,
             liveActivityState=liveActivityState
         )
 
         # Delay cancel or complete notification to ensure it's last
-        if event == self.EVENT_CANCELLED or event == self.EVENT_DONE:
+        if event == self.EVENT_CANCELLED or event == self.EVENT_DONE or event == self.EVENT_ERROR:
             time.sleep(5)
 
         if notificationSound is not None:
@@ -414,7 +437,19 @@ class NotificationSender:
                 "title-loc-key": notificationTitleKey,
                 "title-loc-args": notificationTitleArgs,
                 "loc-key": notificationBodyKey,
-                "loc-args": notificationBodyArgs,
+                "loc-args": notificationBodyArgs
+            }
+
+            data["activity-alert"] = {
+                "title": {
+                    "loc-key": notificationTitleKey,
+                    "loc-args": notificationTitleArgs,
+                },
+                "body": {
+                    "loc-key": notificationBodyKey,
+                    "loc-args": notificationBodyArgs,
+                },
+                # "sound": notificationSound -> We send a notification alongside because iOS doesn't play this sound reliably, especially with Apple Watch connected
             }
 
             # Delete None values, causes issues with APNS
@@ -423,28 +458,50 @@ class NotificationSender:
                     del data["alert"][k]
 
         return data
+    
+
+    def _createActivityStartData(self, event, state):
+        # Base: Activity state
+        data = self._createActivityContentState(
+            isEnd=False,
+            state=state,
+            liveActivityState="printing"
+        )
+        # Add alert
+        data.update(self._createApnsPushData(event, state))
+
+        # Add attributes needed for start
+        # ! the node JS server will set attributes.instanceId
+        data.update(
+            {
+                "event": "start",
+                "attributes-type": "PrintActivityAttributes",
+                "attributes": {
+                    "filePath": state.get(NotificationSender.STATE_FILE_PATH, None),
+                    "startedAt": time.time()
+                }
+            }
+        )
+        return data
+
 
     def _createActivityContentState(self, isEnd, state, liveActivityState):
         return {
             "event": "end" if isEnd else "update",
             "content-state": {
                 "fileName": state.get(NotificationSender.STATE_FILE_NAME, None),
+                "filePath": state.get(NotificationSender.STATE_FILE_PATH, None),
                 "progress": int(float(state.get(NotificationSender.STATE_PROGRESS_PERCENT, None))),
                 "sourceTime": int(time.time() * 1000),
                 "state": liveActivityState,
+                "error": state.get(self.STATE_ERROR, None),
                 "timeLeft": int(float(state.get(NotificationSender.STATE_TIME_REMAINING_SEC, None))),
                 "printTime": int(float(state.get(NotificationSender.STATE_DURATION_SEC, None))),
             }
         }
 
-    def _shouldPreferActivity(self, event):
-        return event != self.EVENT_BEEP and event != self.EVENT_FIRST_LAYER_DONE and event != self.EVENT_THIRD_LAYER_DONE and event != self.EVENT_CUSTOM
-
-    def _canUseNonActivity(self, event):
-        return event != self.EVENT_PROGRESS and event != self.EVENT_PROGRESS and event != self.EVENT_RESUME and event != self.EVENT_TIME_PROGRESS
-
-    def _getPushTargets(self, preferActivity, canUseNonActivity):
-        Sentry.Info("SENDER", "Finding targets preferActivity=%s canUseNonActivity=%s" % (preferActivity, canUseNonActivity))
+    def _getPushTargets(self, event):
+        Sentry.Info("SENDER", "Finding targets for event=%s" % event)
         helper = AppStorageHelper.Get()
         apps = helper.GetAllApps()
         phones = {}
@@ -462,22 +519,24 @@ class NotificationSender:
             ios = helper.GetIosApps(apps)
             android = helper.GetAndroidApps(apps)
 
-            # If we have an activity and we should prefer it, use it
-            if len(activities) and preferActivity:
-                return activities[0:1]
-            
-            # If we have an iOS app and we can use non-activity targets, use it
-            # This means iOS might not be picked at all if we only can use activity but no activity is available!
-            elif len(ios) and canUseNonActivity:
-                return ios[0:1]
+            # For start events we can generate LiveActivity instances on the fly which will start a LiveActivity
+            if event == self.EVENT_STARTED:
+                for ios_app in ios:
+                    if ios_app.ActivityAutoStartToken:
+                        activities.append(ios_app.WithToken(ios_app.ActivityAutoStartToken))
 
-            # If we have any android devices, use all of them (might be watch + phone)
-            elif len(android):
+            if len(android):
+                # If we have android...return any way. Handled all the same.
                 return android
-            
-            # Oh no!
+            elif event in [self.EVENT_CUSTOM, self.EVENT_BEEP, self.EVENT_FIRST_LAYER_DONE, self.EVENT_THIRD_LAYER_DONE]:
+                # If we have an event Live Activities can't handle send via notification
+                 return ios
+            elif event in [self.EVENT_STARTED, self.EVENT_FILAMENT_REQUIRED, self.EVENT_USER_INTERACTION_NEEDED, self.EVENT_CANCELLED, self.EVENT_DONE, self.EVENT_ERROR]:
+                # If we have a important event, send to all targets
+                return activities + ios
             else:
-                return []
+                # Send only to activities, might be empty
+                return activities
 
         # Get apps per phone and flatten
         apps = list(map(lambda phone: pick_best_app(phone), phones.values()))
@@ -492,6 +551,7 @@ class NotificationSender:
         )
         t.daemon = True
         t.start()
+
 
     def _doContinuouslyCheckActivitiesExpired(self):
          Sentry.Debug("SENDER", "Checking for expired apps every 60s")

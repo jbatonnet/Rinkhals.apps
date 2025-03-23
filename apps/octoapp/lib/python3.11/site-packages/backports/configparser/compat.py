@@ -1,5 +1,5 @@
-import types
 import io as _io
+import types
 
 
 def text_encoding(encoding, stacklevel=2):  # pragma: no cover
