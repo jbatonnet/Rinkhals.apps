@@ -40,6 +40,7 @@ tar -czf /build/dist/update_swu/setup.tar.gz --exclude='setup.tar.gz' .
 rm -rf /build/dist/update.swu
 
 cd /build/dist
-zip -P U2FsdGVkX19deTfqpXHZnB5GeyQ/dtlbHjkUnwgCi+w= -r update.swu update_swu
+zip -P U2FsdGVkX19deTfqpXHZnB5GeyQ/dtlbHjkUnwgCi+w= -r update-k2p-k3.swu update_swu
+zip -P U2FsdGVkX1+lG6cHmshPLI/LaQr9cZCjA8HZt6Y8qmbB7riY -r update-ks1.swu update_swu
 
-echo "Done, your update package is ready: build/dist/update.swu"
+echo "Done, your update packages are ready: build/dist/update-*.swu"

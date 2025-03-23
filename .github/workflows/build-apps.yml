@@ -15,7 +15,7 @@ jobs:
         with:
           name: app-example.swu
           path: |
-            build/dist/update.swu
+            build/dist/update-*.swu
 
   build-octoapp:
     runs-on: ubuntu-latest
@@ -27,7 +27,7 @@ jobs:
         with:
           name: app-octoapp.swu
           path: |
-            build/dist/update.swu
+            build/dist/update-*.swu
 
   build-cloudflare-tunnel:
     runs-on: ubuntu-latest
@@ -39,7 +39,7 @@ jobs:
         with:
           name: app-cloudflare-tunnel.swu
           path: |
-            build/dist/update.swu
+            build/dist/update-*.swu
             
   build-tailscale:
     runs-on: ubuntu-latest
@@ -51,8 +51,20 @@ jobs:
         with:
           name: app-tailscale.swu
           path: |
-            build/dist/update.swu
+            build/dist/update-*.swu
             
+  build-discovery-helper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          docker run --rm -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/discovery-helper"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-discovery-helper.swu
+          path: |
+            build/dist/update-*.swu
+
   build-vanilla-klipper: 
     runs-on: ubuntu-latest
     steps:
@@ -63,16 +75,5 @@ jobs:
         with:
           name: app-vanilla-klipper.swu
           path: |
-            build/dist/update.swu
+            build/dist/update-*.swu
             
-  build-vanilla-moonraker: 
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: |
-          docker run --rm -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/vanilla-moonraker"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: app-vanilla-moonraker.swu
-          path: |
-            build/dist/update.swu
