@@ -1,0 +1,7 @@
+{
+    "$version": "1",
+
+    "name": "Cloud to LAN bridge",
+    "description": "Enable most Cloud features to still work even when LAN mode is enabled. This app will bridge all Cloud messages to the LAN, enabling control from Anycubic apps in LAN mode. It will only work if LAN mode is enabled",
+    "version": "0.1"
+}
