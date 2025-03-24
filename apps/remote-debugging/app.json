@@ -1,0 +1,7 @@
+{
+    "$version": "1",
+
+    "name": "Remote debugging",
+    "description": "WARNING, this app is dangerous as it can share remote access to your printer from the internet. Do not share any link or code unless you know exactly what you are doing and the person asking you the information",
+    "version": "0.1"
+}

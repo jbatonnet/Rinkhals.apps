@@ -77,3 +77,14 @@ jobs:
           path: |
             build/dist/update-*.swu
             
+  build-remote-debugging: 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          docker run --rm -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/remote-debugging"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-remote-debugging.swu
+          path: |
+            build/dist/update-*.swu
