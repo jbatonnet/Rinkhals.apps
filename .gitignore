@@ -4,3 +4,4 @@ build/dist
 files/4-rinkhals/usr/share/data/framebuffer.bmp
 .DS_Store
 build/cache
+build/dev.md

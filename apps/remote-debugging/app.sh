@@ -2,24 +2,10 @@
 
 APP_ROOT=$(dirname $(realpath $0))
 
-TAILSCALE_STATE_DIR=$APP_ROOT/state
-TAILSCALE_SOCKET=$TAILSCALE_STATE_DIR/tailscaled.sock
-
 status() {
-    cd $APP_ROOT
+    PID=$(get_by_name ngrok)
 
-    TAILSCALED_PID=$(cat ./state/tailscaled.pid 2> /dev/null)
-    TAILSCALE_PID=$(cat ./state/tailscale.pid 2> /dev/null)
-
-    if [ "$TAILSCALED_PID" == "" ] || [ "$TAILSCALE_PID" == "" ]; then
-        report_status $APP_STATUS_STOPPED
-        return
-    fi
-
-    TAILSCALED_PS=$(ps | grep $TAILSCALED_PID)
-    TAILSCALE_PS=$(ps | grep $TAILSCALE_PID)
-
-    if [ "$TAILSCALED_PS" == "" ] || [ "$TAILSCALE_PS" == "" ]; then
+    if [ "$PID" == "" ]; then
         report_status $APP_STATUS_STOPPED
         return
     fi
@@ -30,53 +16,44 @@ start() {
     stop
     cd $APP_ROOT
 
-    rm ./.enabled
-    touch ./.disabled
+    if [ -f ./.enabled ] || [ ! -f ./.disabled ]; then
+        rm ./.enabled
+        touch ./.disabled
 
-    chmod +x ./tailscale
-    chmod +x ./tailscaled
-
-    mkdir -p ./logs
-    mkdir -p $TAILSCALE_STATE_DIR
-
-    TAILSCALE_AUTH_KEY=$(cat .tailscale-auth-key 2> /dev/null)
-    if [ "$TAILSCALE_AUTH_KEY" == "" ]; then
-        echo "A valid auth-key must be in .tailscale-auth-key for remote debugging to work"
         exit 1
     fi
 
-    rm -f $TAILSCALE_SOCKET 2> /dev/null
+    NGROK_AUTHTOKEN=$(cat .ngrok-authtoken 2> /dev/null)
+    if [ "$NGROK_AUTHTOKEN" == "" ]; then
+        echo "A valid auth-key must be in .ngrok-authtoken for remote debugging to work"
+        exit 1
+    fi
 
-    ./tailscaled --tun=userspace-networking --statedir="$TAILSCALE_STATE_DIR" --socket="$TAILSCALE_SOCKET" >> ./logs/tailscaled.log 2>&1 &
-    TAILSCALED_PID=$!
-    echo $TAILSCALED_PID > ./state/tailscaled.pid
+    rm -f ./ngrok-err.log 2> /dev/null
 
-    ./tailscale --socket="$TAILSCALE_SOCKET" up --auth-key="$TAILSCALE_AUTH_KEY" --hostname="${KOBRA_MODEL_CODE}-${RINKHALS_VERSION}-${KOBRA_DEVICE_ID:-$RANDOM}" >> ./logs/tailscale.log 2>&1 &
-    TAILSCALE_PID=$!
-    echo $TAILSCALE_PID > ./state/tailscale.pid
-}
-debug() {
-    stop
-    cd $APP_ROOT
+    chmod +x ./ngrok
+    ./ngrok tcp --authtoken=${NGROK_AUTHTOKEN} 22 1> /dev/null 2> ./ngrok-err.log &
 
-    TAILSCALE_AUTH_KEY=$(cat .tailscale-auth-key 2> /dev/null)
+    while [ 1 ]; do
+        NGROK_ERROR=$(cat ./ngrok-err.log 2> /dev/null | grep ERROR)
+        if [ "$NGROK_ERROR" != "" ]; then
+            echo $NGROK_ERROR
+            exit 1
+        fi
 
-    rm -f $TAILSCALE_SOCKET 2> /dev/null
-
-    ./tailscaled --tun=userspace-networking --statedir="$TAILSCALE_STATE_DIR" --socket="$TAILSCALE_SOCKET" >> ./logs/tailscaled.log 2>&1
-    ./tailscale --socket="$TAILSCALE_SOCKET" up --auth-key="$TAILSCALE_AUTH_KEY" --hostname="${KOBRA_MODEL_CODE}-${RINKHALS_VERSION}-${KOBRA_DEVICE_ID:-$RANDOM}" >> ./logs/tailscale.log 2>&1
+        API_OUTPUT=$(curl -s http://localhost:4040/api/tunnels/)
+        EXIT_CODE=$?
+        if [ "$EXIT_CODE" = "0" ]; then
+            TCP_ADDRESS=$(echo $API_OUTPUT | jq -r .tunnels[0].public_url)
+            if [ "$TCP_ADDRESS" != "null" ]; then
+                echo "Remote TCP endpoint: $TCP_ADDRESS"
+                exit 0
+            fi
+        fi
+    done
 }
 stop() {
-    cd $APP_ROOT
-
-    TAILSCALED_PID=$(cat ./state/tailscaled.pid 2> /dev/null)
-    TAILSCALE_PID=$(cat ./state/tailscale.pid 2> /dev/null)
-
-    kill_by_id $TAILSCALED_PID
-    kill_by_id $TAILSCALE_PID
-
-    rm ./state/tailscaled.pid 2> /dev/null
-    rm ./state/tailscale.pid 2> /dev/null
+    kill_by_name ngrok
 }
 
 case "$1" in
