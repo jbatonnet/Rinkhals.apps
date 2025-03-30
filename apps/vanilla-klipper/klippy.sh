@@ -1,8 +1,8 @@
-source /useremain/rinkhals/.current/tools.sh
+. /useremain/rinkhals/.current/tools.sh
 
 # Activate Python venv
 python -m venv --without-pip $APP_ROOT
-source bin/activate
+. bin/activate
 
 # Prepare configuration
 CONFIG_SOURCE=printer.klipper_${KOBRA_MODEL_CODE}.cfg
@@ -17,6 +17,6 @@ fi
 
 # Start Klippy
 cd klippy
-python -m klippy -a /tmp/unix_uds1 $CONFIG_PATH >> $RINKHALS_ROOT/logs/app-klippy.log 2>&1 &
+python -m klippy -a /tmp/unix_uds1 $CONFIG_DESTINATION >> $RINKHALS_ROOT/logs/app-klippy.log 2>&1 &
 
 assert_by_name klippy
