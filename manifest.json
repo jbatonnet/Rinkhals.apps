@@ -1,0 +1,25 @@
+{
+    "$version": "1", // Schema version
+
+    "name": "Rinkhals apps",
+    "description": "3rd party apps for Rinkhals custom firmware for the Anycubic Kobra series of 3D printers",
+
+    "repository": "https://github.com/jbatonnet/Rinkhals.apps",
+    "self": "https://raw.githubusercontent.com/jbatonnet/Rinkhals.apps/refs/heads/master/manifest.json",
+
+    "apps": {
+        "example": {
+            "name": "Example app",
+            "description": "Simple example app to showcase the app system",
+            "maintainer": "julien.batonnet@gmail.com",
+            "version": "2",
+            "changes": "", // Optional: Short changelog
+            "url": "https://github.com/jbatonnet/Rinkhals.apps/tree/master/apps/example"
+
+            // Valid URLs are:
+            // - Direct link to app ZIP package
+            // - Direct link to SWU app installer
+            // - Link to Github repo + path (https://github.com/jbatonnet/Rinkhals.apps/tree/master/apps/example)
+        }
+    }
+}

@@ -5,6 +5,7 @@
     "description": "Simple example app to showcase the app system",
     "version": "1.0",
     "url": "https://github.com/jbatonnet/Rinkhals.apps/tree/master/apps/example", // App or project URL
+    "manifest": "https://raw.githubusercontent.com/jbatonnet/Rinkhals.apps/refs/heads/master/manifest.json", // Repo manifest URL
 
     "requirements":
     {
