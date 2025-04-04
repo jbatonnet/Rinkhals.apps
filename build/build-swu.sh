@@ -1,9 +1,17 @@
 #!/bin/sh
 
 # From a Windows machine:
-#   docker run --rm -it -v .\build:/build -v .\files:/files -v .\apps:/apps ghcr.io/jbatonnet/rinkhals/build /build/build-swu.sh "APP_PATH"
+#   docker run --rm -it -e KOBRA_MODEL_CODE="K3" -v .\build:/build -v .\files:/files -v .\apps:/apps ghcr.io/jbatonnet/rinkhals/build /build/build-swu.sh "APP_PATH"
+
+
+if [ "$KOBRA_MODEL_CODE" = "" ]; then
+    echo "Please specify your Kobra model using KOBRA_MODEL_CODE environment variable"
+    exit 1
+fi
 
 set -e
+BUILD_ROOT=$(dirname $(realpath $0))
+. $BUILD_ROOT/tools.sh
 
 
 # Prepare update
@@ -26,21 +34,10 @@ mkdir -p /tmp/update_swu/$APP
 cp -r $APP_ROOT/* /tmp/update_swu/$APP/
 
 
-# Create the setup.tar.gz
+# Create the update package
 echo "Building update package..."
 
-mkdir -p /build/dist/update_swu
-rm -rf /build/dist/update_swu/*
+SWU_PATH=${2:-/build/dist/update.swu}
+build_swu $KOBRA_MODEL_CODE /tmp/update_swu $SWU_PATH
 
-cd /tmp/update_swu
-tar -czf /build/dist/update_swu/setup.tar.gz --exclude='setup.tar.gz' .
-
-
-# Create the update.swu
-rm -rf /build/dist/update.swu
-
-cd /build/dist
-zip -P U2FsdGVkX19deTfqpXHZnB5GeyQ/dtlbHjkUnwgCi+w= -r update-k2p-k3.swu update_swu
-zip -P U2FsdGVkX1+lG6cHmshPLI/LaQr9cZCjA8HZt6Y8qmbB7riY -r update-ks1.swu update_swu
-
-echo "Done, your update packages are ready: build/dist/update-*.swu"
+echo "Done, your update package is ready: $SWU_PATH"

@@ -10,7 +10,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          docker run --rm -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/example"
+          docker run --rm -e KOBRA_MODEL_CODE="K3" -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/example /build/dist/update-k2p-k3.swu"
+          docker run --rm -e KOBRA_MODEL_CODE="KS1" -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/example /build/dist/update-ks1.swu"
       - uses: actions/upload-artifact@v4
         with:
           name: app-example.swu
@@ -22,7 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          docker run --rm -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/octoapp"
+          docker run --rm -e KOBRA_MODEL_CODE="K3" -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/octoapp /build/dist/update-k2p-k3.swu"
+          docker run --rm -e KOBRA_MODEL_CODE="KS1" -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/octoapp /build/dist/update-ks1.swu"
       - uses: actions/upload-artifact@v4
         with:
           name: app-octoapp.swu
@@ -34,7 +36,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          docker run --rm -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/octoeverywhere"
+          docker run --rm -e KOBRA_MODEL_CODE="K3" -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/octoeverywhere /build/dist/update-k2p-k3.swu"
+          docker run --rm -e KOBRA_MODEL_CODE="KS1" -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/octoeverywhere /build/dist/update-ks1.swu"
       - uses: actions/upload-artifact@v4
         with:
           name: app-octoeverywhere.swu
@@ -46,7 +49,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          docker run --rm -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/cloudflare-tunnel"
+          docker run --rm -e KOBRA_MODEL_CODE="K3" -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/cloudflare-tunnel /build/dist/update-k2p-k3.swu"
+          docker run --rm -e KOBRA_MODEL_CODE="KS1" -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/cloudflare-tunnel /build/dist/update-ks1.swu"
       - uses: actions/upload-artifact@v4
         with:
           name: app-cloudflare-tunnel.swu
@@ -58,7 +62,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          docker run --rm -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/tailscale"
+          docker run --rm -e KOBRA_MODEL_CODE="K3" -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/tailscale /build/dist/update-k2p-k3.swu"
+          docker run --rm -e KOBRA_MODEL_CODE="KS1" -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/tailscale /build/dist/update-ks1.swu"
       - uses: actions/upload-artifact@v4
         with:
           name: app-tailscale.swu
@@ -70,7 +75,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          docker run --rm -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/discovery-helper"
+          docker run --rm -e KOBRA_MODEL_CODE="K3" -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/discovery-helper /build/dist/update-k2p-k3.swu"
+          docker run --rm -e KOBRA_MODEL_CODE="KS1" -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/discovery-helper /build/dist/update-ks1.swu"
       - uses: actions/upload-artifact@v4
         with:
           name: app-discovery-helper.swu
@@ -82,7 +88,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          docker run --rm -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/vanilla-klipper"
+          docker run --rm -e KOBRA_MODEL_CODE="K3" -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/vanilla-klipper /build/dist/update-k2p-k3.swu"
+          docker run --rm -e KOBRA_MODEL_CODE="KS1" -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/vanilla-klipper /build/dist/update-ks1.swu"
       - uses: actions/upload-artifact@v4
         with:
           name: app-vanilla-klipper.swu
@@ -94,7 +101,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          docker run --rm -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/remote-debugging"
+          docker run --rm -e KOBRA_MODEL_CODE="K3" -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/remote-debugging /build/dist/update-k2p-k3.swu"
+          docker run --rm -e KOBRA_MODEL_CODE="KS1" -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-swu.sh && /build/build-swu.sh /apps/remote-debugging /build/dist/update-ks1.swu"
       - uses: actions/upload-artifact@v4
         with:
           name: app-remote-debugging.swu

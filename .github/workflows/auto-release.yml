@@ -1,0 +1,29 @@
+name: Auto release on tag
+
+on:
+  push:
+    tags:
+      - '*'
+  
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - run: |
+        docker run --rm -v ${{ github.workspace }}/build:/build -v ${{ github.workspace }}/apps:/apps ghcr.io/jbatonnet/rinkhals/build /bin/bash -c "chmod +x /build/build-all-swus.sh && /build/build-all-swus.sh"
+
+    - name: Create release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        tag: ${{ github.ref_name }}
+      run: |
+        gh release create "$tag" \
+            --repo="$GITHUB_REPOSITORY" \
+            --title="${GITHUB_REPOSITORY#*/} ${tag}" \
+            --generate-notes \
+            --draft \
+            build/dist/app-*.swu
