@@ -5,8 +5,14 @@
     "description": "A maker community project that enables free remote access, AI failure detection, print notifications, live streaming and more.",
     "version": "4.1.0",
 
-    "requirements":
-    {
+    "requirements": {
         "memory": 20
+    },
+    
+    "properties": {
+        "printer_link": {
+            "display": "Link your printer",
+            "type": "qr"
+        }
     }
 }

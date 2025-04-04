@@ -40,16 +40,10 @@ start() {
     rm -f $RINKHALS_HOME/printer_data/config/moonraker.conf
     ln -s $RINKHALS_HOME/printer_data/config/moonraker.generated.conf $RINKHALS_HOME/printer_data/config/moonraker.conf
 
-    # Create Python venv
-    python -m venv --without-pip .
-    . bin/activate
-
-    # Start OctoEverywhere
-    cd octoeverywhere
     OCTOEVERYWHERE_CONFIG=$(get_octoeverywhere_config)
-    python -m moonraker_octoeverywhere "$OCTOEVERYWHERE_CONFIG" >> $RINKHALS_ROOT/logs/app-octoeverywhere.log 2>&1 &
 
-    assert_by_name moonraker_octoeverywhere
+    chmod +x ./octoeverywhere.sh
+    ./octoeverywhere.sh "$OCTOEVERYWHERE_CONFIG" &
 }
 debug() {
     stop
@@ -71,6 +65,7 @@ debug() {
 }
 stop() {
     kill_by_name moonraker_octoeverywhere
+    kill_by_name octoeverywhere.sh
 }
 
 case "$1" in
