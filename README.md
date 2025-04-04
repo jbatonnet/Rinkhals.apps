@@ -100,8 +100,8 @@ docker run --rm -it -v .\build:/build -v .\files:/files -v .\apps:/apps ghcr.io/
 ## Apps ideas
 
 Here are some apps ideas:
-- Cloudflare Tunnel (thanks to dan3805 for the idea: https://github.com/jbatonnet/Rinkhals/issues/17)
-- Tailscale VPN
+- Web based terminal
 - FTP / Samba server to add files / apps easily
+- VNC server
 
 You can take inspirations to this great script for Creality printers: https://github.com/Guilouz/Creality-Helper-Script

@@ -4,11 +4,41 @@
     "name": "Example app",
     "description": "Simple example app to showcase the app system",
     "version": "1.0",
-    "depends": [], // TODO: Not supported yet
+    "url": "https://github.com/jbatonnet/Rinkhals.apps/tree/master/apps/example", // App or project URL
 
     "requirements":
     {
-        "cpu": 0, // CPU usage in %
+        "cpu": 0, // TODO: CPU usage in %
         "memory": 0 // Memory usage in MB
+    },
+
+    // Those properties will be exposed in Rinkhals UI
+    "properties": {
+        "text_input": {
+            "display": "IP address", // Optional: If display if not set, the property won't be shown in the UI
+            "type": "text", // Optional: Property type for the UI (text, number, enum, report or qr)
+            "validation": "^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$", // Optional: Regex to validate strings
+            "default": "0.0.0.0" // Optional: Default value
+        },
+        "number_input": {
+            "display": "Number",
+            "type": "number",
+            "range": [ 1024, 65536 ], // Optional: Valid range for the number
+            "default": 5678
+        },
+        "enum_input": {
+            "display": "Option",
+            "type": "enum",
+            "options": [ "Choice 1", "Choice 2", "Choice 3" ] // Optional: Valid choices for this enum
+        },
+
+        "text_output": {
+            "display": "Status",
+            "type": "report" // Reports will be shown to the user but not editable
+        },
+        "link_output": {
+            "display": "Link",
+            "type": "qr" // This property will be shown to the user with a QR code
+        }
     }
 }

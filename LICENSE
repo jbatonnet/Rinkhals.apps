@@ -25,7 +25,8 @@ All my scripts / code is provided under this license:
 
 All existing code / binaries / projects are provided here under their own license, such as but not limited to:
 
+- Binaries included (tailscale, cloudflare, ngrok, ...) > Corresponding software licenses
 - apps/\*/lib/python*/site-packages/* > Corresponding module licenses
 - apps/octoapp/octoapp/* > https://github.com/crysxd/OctoApp-Plugin/blob/release/LICENSE
 - apps/octoeverywhere/octoeverywhere/* > https://github.com/QuinnDamerell/OctoPrint-OctoEverywhere/blob/master/LICENSE
-- icon.png > https://www.flaticon.com/free-icons/snake
+- icon.png > https://www.flaticon.com/free-icon/cobra_375098
