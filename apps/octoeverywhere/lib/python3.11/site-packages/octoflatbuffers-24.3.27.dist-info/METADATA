@@ -1,0 +1,29 @@
+Metadata-Version: 2.1
+Name: octoflatbuffers
+Version: 24.3.27
+Summary: A fork of flatbuffers used for OctoEverywhere and Homeway
+Home-page: https://github.com/QuinnDamerell/octoflatbuffers
+Author: Quinn Damerell
+Author-email: support@octoeverywhere.com
+License: Apache 2.0
+Project-URL: Documentation, https://github.com/QuinnDamerell/octoflatbuffers
+Project-URL: Source, https://github.com/QuinnDamerell/octoflatbuffers
+Project-URL: OctoEverywhere, https://octoeverywhere.com/?source=pypi
+Project-URL: Homeway, https://homeway.io/?source=pypi
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Description-Content-Type: text/markdown
+
+
+# OctoFlatBuffers
+A fork of [flatbuffers](https://flatbuffers.dev/) with some special modifications. Used as the core protocol for:
+- [OctoEverywhere](https://octoeverywhere.com/?source=pypi) - Free, private, and secure remote access for OctoPrint and Klipper 3D printer.
+- [Homeway](https://homeway.io/?source=pypi) - Free, private, and secure remote access for Home Assistant.
+
+
+For details on why the fork was needed, see the [source GitHub repository.](https://github.com/QuinnDamerell/octoflatbuffers)
