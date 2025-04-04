@@ -1,0 +1,12 @@
+{
+    "$version": "1",
+
+    "name": "OctoEverywhere",
+    "description": "A maker community project that enables free remote access, AI failure detection, print notifications, live streaming and more.",
+    "version": "4.1.0",
+
+    "requirements":
+    {
+        "memory": 20
+    }
+}

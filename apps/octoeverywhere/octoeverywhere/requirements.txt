@@ -1,0 +1,26 @@
+#
+# This file is only used by the moonraker setup, not OctoPrint!
+# OctoPrint uses the package list in the setup.py file.
+#
+# BUT, for the most part, the packages should be exactly synced between these sources.
+# The only exception would be any packages moonraker or OctoPrint depend upon, that the other doesn't.
+#
+# For comments on package lock versions, see the comments in the setup.py file.
+#
+octowebsocket_client==1.8.3
+requests>=2.31.0
+octoflatbuffers==24.3.27
+pillow
+certifi>=2025.1.31
+rsa>=4.9
+dnspython>=2.3.0
+httpx>=0.24.1
+urllib3>=2.0.0
+#sentry-sdk>=1.19.1,<2
+#zstandard>=0.22.0,<0.23.0
+
+# The following are required only for Moonraker
+configparser
+
+# Only used for Bambu Connect
+paho-mqtt>=2.0.0
