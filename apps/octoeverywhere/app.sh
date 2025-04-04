@@ -14,7 +14,7 @@ get_octoeverywhere_config() {
     "ServiceName": "OctoEverywhere",
     "VirtualEnvPath": "$RINKHALS_HOME",
     "RepoRootFolder": "$APP_ROOT/octoeverywhere",
-    "IsRinkhals": true,
+    "IsRinkhals": true
 }
 EOF
 )
