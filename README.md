@@ -15,9 +15,9 @@ There are 2 options to install Rinkhals apps on your printer. You will obviously
 
 ### Using SWU packages
 
-You can use the SWU packages provided on this page: https://github.com/jbatonnet/Rinkhals.apps/actions/workflows/build-apps.yml
+You can use the SWU packages provided in the releases page: https://github.com/jbatonnet/Rinkhals.apps/releases
 
-You can download the SWU file for the app you want, copy it as **update.swu** on a FAT32 USB drive in a **aGVscF9zb3Nf** directory, plug the USB drive in the Kobra and it just works. You will ear two beeps, the second one will tell you that the app is installed. There is no need to reboot afterwards.
+You can download the SWU file for the app you want and the printer you have, copy it as **update.swu** on a FAT32 USB drive in a **aGVscF9zb3Nf** directory, plug the USB drive in the Kobra and it just works. You will ear two beeps, the second one will tell you that the app is installed. There is no need to reboot afterwards.
 
 You might need to enable the app for it to start. Use the Rinkhals touch UI or create a **/useremain/home/rinkhals/apps/[APP_NAME].enabled** file and reboot.
 
