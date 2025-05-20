@@ -30,6 +30,7 @@ for APP_ROOT in $(find /apps -type d -mindepth 1 -maxdepth 1); do
     SWU_PATH=${2:-/build/dist/update.swu}
     build_swu K3 /tmp/update_swu /build/dist/app-$APP-k2p-k3.swu
     build_swu KS1 /tmp/update_swu /build/dist/app-$APP-ks1.swu
+    build_swu K3M /tmp/update_swu /build/dist/app-$APP-k3m.swu
 done
 
 echo "Done, your app packages are ready: /build/dist/app-*.swu"
