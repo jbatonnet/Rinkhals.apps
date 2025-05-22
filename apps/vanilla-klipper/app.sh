@@ -11,6 +11,7 @@ status() {
         report_status $APP_STATUS_STARTED "$PIDS"
     fi
 }
+
 start() {
     stop
     cd $APP_ROOT
@@ -21,6 +22,19 @@ start() {
     # Start Klippy
     chmod +x klippy.sh
     ./klippy.sh &
+}
+
+debug() {
+    stop
+    cd $APP_ROOT
+
+    kill_by_name gklib
+
+    python -m venv --without-pip $APP_ROOT
+    . bin/activate
+
+    cd klippy
+    python -m klippy -a /tmp/unix_uds1 $@
 }
 
 stop() {
@@ -39,11 +53,15 @@ case "$1" in
     start)
         start
         ;;
+    debug)
+        shift
+        debug $@
+        ;;
     stop)
         stop
         ;;
     *)
-        echo "Usage: $0 {status|start|stop}" >&2
+        echo "Usage: $0 {status|start|debug|stop}" >&2
         exit 1
         ;;
 esac
