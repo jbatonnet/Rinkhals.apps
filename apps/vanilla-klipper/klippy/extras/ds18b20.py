@@ -10,13 +10,12 @@ DS18_REPORT_TIME = 3.0
 # Temperature can be sampled at any time but conversion time is ~750ms, so
 # setting the time too low will not make the reports come faster.
 DS18_MIN_REPORT_TIME = 1.0
-DS18_MAX_CONSECUTIVE_ERRORS = 4
 
 class DS18B20:
     def __init__(self, config):
         self.printer = config.get_printer()
         self.name = config.get_name().split()[-1]
-        self.sensor_id = bytearray(config.get("serial_no").encode())
+        self.sensor_id = config.get("serial_no")
         self.temp = self.min_temp = self.max_temp = 0.0
         self._report_clock = 0
         self.report_time = config.getfloat(
@@ -31,10 +30,8 @@ class DS18B20:
         self._mcu.register_config_callback(self._build_config)
 
     def _build_config(self):
-        sid = "".join(["%02x" % (x,) for x in self.sensor_id])
-        self._mcu.add_config_cmd(
-            "config_ds18b20 oid=%d serial=%s max_error_count=%d"
-            % (self.oid, sid, DS18_MAX_CONSECUTIVE_ERRORS))
+        self._mcu.add_config_cmd("config_ds18b20 oid=%d serial=%s" % (self.oid,
+            self.sensor_id.encode("hex")))
 
         clock = self._mcu.get_query_slot(self.oid)
         self._report_clock = self._mcu.seconds_to_clock(self.report_time)
@@ -46,10 +43,10 @@ class DS18B20:
     def _handle_ds18b20_response(self, params):
         temp = params['value'] / 1000.0
 
-        if params["fault"]:
-            logging.info("ds18b20 reports fault %d (temp=%0.1f)",
-                         params["fault"], temp)
-            return
+        if temp < self.min_temp or temp > self.max_temp:
+            self.printer.invoke_shutdown(
+                "DS18B20 temperature %0.1f outside range of %0.1f:%.01f"
+                % (temp, self.min_temp, self.max_temp))
 
         next_clock      = self._mcu.clock32_to_clock64(params['next_clock'])
         last_read_clock = next_clock - self._report_clock
@@ -71,7 +68,7 @@ class DS18B20:
 
     def get_status(self, eventtime):
         return {
-            'temperature': round(self.temp, 2),
+            'temperature': self.temp,
         }
 
 def load_config(config):

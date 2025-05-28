@@ -4,8 +4,7 @@
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
 import logging
-import stepper
-from . import idex_modes
+import stepper, idex_modes
 
 # The hybrid-corexy kinematic is also known as Markforged kinematics
 class HybridCoreXYKinematics:
@@ -18,9 +17,9 @@ class HybridCoreXYKinematics:
                        stepper.LookupMultiRail(config.getsection('stepper_z'))]
         self.rails[1].get_endstops()[0][0].add_stepper(
             self.rails[0].get_steppers()[0])
-        self.rails[0].setup_itersolve('corexy_stepper_alloc', b'-')
-        self.rails[1].setup_itersolve('cartesian_stepper_alloc', b'y')
-        self.rails[2].setup_itersolve('cartesian_stepper_alloc', b'z')
+        self.rails[0].setup_itersolve('corexy_stepper_alloc', '-')
+        self.rails[1].setup_itersolve('cartesian_stepper_alloc', 'y')
+        self.rails[2].setup_itersolve('cartesian_stepper_alloc', 'z')
         ranges = [r.get_range() for r in self.rails]
         self.axes_min = toolhead.Coord(*[r[0] for r in ranges], e=0.)
         self.axes_max = toolhead.Coord(*[r[1] for r in ranges], e=0.)
@@ -33,13 +32,17 @@ class HybridCoreXYKinematics:
             self.rails.append(stepper.PrinterRail(dc_config))
             self.rails[1].get_endstops()[0][0].add_stepper(
                 self.rails[3].get_steppers()[0])
-            self.rails[3].setup_itersolve('corexy_stepper_alloc', b'+')
+            self.rails[3].setup_itersolve('cartesian_stepper_alloc', 'y')
             dc_rail_0 = idex_modes.DualCarriagesRail(
-                    self.rails[0], axis=0, active=True)
+                self.printer, self.rails[0], axis=0, active=True,
+                stepper_alloc_active=('corexy_stepper_alloc','-'),
+                stepper_alloc_inactive=('cartesian_reverse_stepper_alloc','y'))
             dc_rail_1 = idex_modes.DualCarriagesRail(
-                    self.rails[3], axis=0, active=False)
-            self.dc_module = idex_modes.DualCarriages(
-                    dc_config, dc_rail_0, dc_rail_1, axis=0)
+                self.printer, self.rails[3], axis=0, active=False,
+                stepper_alloc_active=('corexy_stepper_alloc','+'),
+                stepper_alloc_inactive=('cartesian_stepper_alloc','y'))
+            self.dc_module = idex_modes.DualCarriages(self.printer,
+                        dc_rail_0, dc_rail_1, axis=0)
         for s in self.get_steppers():
             s.set_trapq(toolhead.get_trapq())
             toolhead.register_step_generator(s.generate_steps)
@@ -56,17 +59,13 @@ class HybridCoreXYKinematics:
         return [s for rail in self.rails for s in rail.get_steppers()]
     def calc_position(self, stepper_positions):
         pos = [stepper_positions[rail.get_name()] for rail in self.rails]
-        if (self.dc_module is not None and 'PRIMARY' == \
-                    self.dc_module.get_status()['carriage_1']):
+        if (self.dc_module is not None and 'CARRIAGE_1' == \
+                    self.dc_module.get_status()['active_carriage']):
             return [pos[0] - pos[1], pos[1], pos[2]]
         else:
             return [pos[0] + pos[1], pos[1], pos[2]]
     def update_limits(self, i, range):
-        l, h = self.limits[i]
-        # Only update limits if this axis was already homed,
-        # otherwise leave in un-homed state.
-        if l <= h:
-            self.limits[i] = range
+        self.limits[i] = range
     def override_rail(self, i, rail):
         self.rails[i] = rail
     def set_position(self, newpos, homing_axes):
@@ -77,7 +76,7 @@ class HybridCoreXYKinematics:
     def note_z_not_homed(self):
         # Helper for Safe Z Home
         self.limits[2] = (1.0, -1.0)
-    def home_axis(self, homing_state, axis, rail):
+    def _home_axis(self, homing_state, axis, rail):
         position_min, position_max = rail.get_range()
         hi = rail.get_homing_info()
         homepos = [None, None, None, None]
@@ -91,10 +90,14 @@ class HybridCoreXYKinematics:
         homing_state.home_rails([rail], forcepos, homepos)
     def home(self, homing_state):
         for axis in homing_state.get_axes():
-            if self.dc_module is not None and axis == 0:
-                self.dc_module.home(homing_state)
+            if (self.dc_module is not None and axis == 0):
+                self.dc_module.save_idex_state()
+                for i in [0,1]:
+                    self.dc_module.toggle_active_dc_rail(i)
+                    self._home_axis(homing_state, axis, self.rails[0])
+                self.dc_module.restore_idex_state()
             else:
-                self.home_axis(homing_state, axis, self.rails[axis])
+                self._home_axis(homing_state, axis, self.rails[axis])
     def _motor_off(self, print_time):
         self.limits = [(1.0, -1.0)] * 3
     def _check_endstops(self, move):

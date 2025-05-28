@@ -39,8 +39,7 @@ def resolve_bus_name(mcu, param, bus):
 
 # Helper code for working with devices connected to an MCU via an SPI bus
 class MCU_SPI:
-    def __init__(self, mcu, bus, pin, mode, speed, sw_pins=None,
-                 cs_active_high=False):
+    def __init__(self, mcu, bus, pin, mode, speed, sw_pins=None):
         self.mcu = mcu
         self.bus = bus
         # Config SPI object (set all CS pins high before spi_set_bus commands)
@@ -48,8 +47,7 @@ class MCU_SPI:
         if pin is None:
             mcu.add_config_cmd("config_spi_without_cs oid=%d" % (self.oid,))
         else:
-            mcu.add_config_cmd("config_spi oid=%d pin=%s cs_active_high=%d"
-                               % (self.oid, pin, cs_active_high))
+            mcu.add_config_cmd("config_spi oid=%d pin=%s" % (self.oid, pin))
         # Generate SPI bus config message
         if sw_pins is not None:
             self.config_fmt = (
@@ -105,8 +103,7 @@ class MCU_SPI:
 
 # Helper to setup an spi bus from settings in a config section
 def MCU_SPI_from_config(config, mode, pin_option="cs_pin",
-                        default_speed=100000, share_type=None,
-                        cs_active_high=False):
+                        default_speed=100000, share_type=None):
     # Determine pin from config
     ppins = config.get_printer().lookup_object("pins")
     cs_pin = config.get(pin_option)
@@ -133,7 +130,7 @@ def MCU_SPI_from_config(config, mode, pin_option="cs_pin",
         bus = config.get('spi_bus', None)
         sw_pins = None
     # Create MCU_SPI object
-    return MCU_SPI(mcu, bus, pin, mode, speed, sw_pins, cs_active_high)
+    return MCU_SPI(mcu, bus, pin, mode, speed, sw_pins)
 
 
 ######################################################################
@@ -142,22 +139,13 @@ def MCU_SPI_from_config(config, mode, pin_option="cs_pin",
 
 # Helper code for working with devices connected to an MCU via an I2C bus
 class MCU_I2C:
-    def __init__(self, mcu, bus, addr, speed, sw_pins=None):
+    def __init__(self, mcu, bus, addr, speed):
         self.mcu = mcu
         self.bus = bus
         self.i2c_address = addr
         self.oid = self.mcu.create_oid()
-        mcu.add_config_cmd("config_i2c oid=%d" % (self.oid,))
-        # Generate I2C bus config message
-        if sw_pins is not None:
-            self.config_fmt = (
-                "i2c_set_software_bus oid=%d"
-                " scl_pin=%s sda_pin=%s rate=%d address=%d"
-                % (self.oid, sw_pins[0], sw_pins[1], speed, addr))
-        else:
-            self.config_fmt = (
-                "i2c_set_bus oid=%d i2c_bus=%%s rate=%d address=%d"
-                % (self.oid, speed, addr))
+        self.config_fmt = "config_i2c oid=%d i2c_bus=%%s rate=%d address=%d" % (
+            self.oid, speed, addr)
         self.cmd_queue = self.mcu.alloc_command_queue()
         self.mcu.register_config_callback(self.build_config)
         self.i2c_write_cmd = self.i2c_read_cmd = self.i2c_modify_bits_cmd = None
@@ -170,10 +158,8 @@ class MCU_I2C:
     def get_command_queue(self):
         return self.cmd_queue
     def build_config(self):
-        if '%' in self.config_fmt:
-            bus = resolve_bus_name(self.mcu, "i2c_bus", self.bus)
-            self.config_fmt = self.config_fmt % (bus,)
-        self.mcu.add_config_cmd(self.config_fmt)
+        bus = resolve_bus_name(self.mcu, "i2c_bus", self.bus)
+        self.mcu.add_config_cmd(self.config_fmt % (bus,))
         self.i2c_write_cmd = self.mcu.lookup_command(
             "i2c_write oid=%c data=%*s", cq=self.cmd_queue)
         self.i2c_read_cmd = self.mcu.lookup_query_command(
@@ -213,24 +199,13 @@ def MCU_I2C_from_config(config, default_addr=None, default_speed=100000):
     printer = config.get_printer()
     i2c_mcu = mcu.get_printer_mcu(printer, config.get('i2c_mcu', 'mcu'))
     speed = config.getint('i2c_speed', default_speed, minval=100000)
+    bus = config.get('i2c_bus', None)
     if default_addr is None:
         addr = config.getint('i2c_address', minval=0, maxval=127)
     else:
         addr = config.getint('i2c_address', default_addr, minval=0, maxval=127)
-    # Determine pin from config
-    ppins = config.get_printer().lookup_object("pins")
-    if config.get('i2c_software_scl_pin', None) is not None:
-        sw_pin_names = ['i2c_software_%s_pin' % (name,)
-                        for name in ['scl', 'sda']]
-        sw_pin_params = [ppins.lookup_pin(config.get(name), share_type=name)
-                         for name in sw_pin_names]
-        sw_pins = tuple([pin_params['pin'] for pin_params in sw_pin_params])
-        bus = None
-    else:
-        bus = config.get('i2c_bus', None)
-        sw_pins = None
     # Create MCU_I2C object
-    return MCU_I2C(i2c_mcu, bus, addr, speed, sw_pins)
+    return MCU_I2C(i2c_mcu, bus, addr, speed)
 
 
 ######################################################################

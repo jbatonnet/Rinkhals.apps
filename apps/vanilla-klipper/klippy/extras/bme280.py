@@ -332,7 +332,7 @@ class BME280:
                 % (self.temp, self.min_temp, self.max_temp))
         measured_time = self.reactor.monotonic()
         self._callback(self.mcu.estimated_print_time(measured_time), self.temp)
-        return measured_time + REPORT_TIME
+        return measured_time + REPORT_TIME * 4
 
     def _compensate_temp(self, raw_temp):
         dig = self.dig
@@ -437,7 +437,7 @@ class BME280:
         else:
             factor = 0
             while duration_ms > 0x3F:
-                duration_ms //= 4
+                duration_ms /= 4
                 factor += 1
             duration_reg = duration_ms + (factor * 64)
 
@@ -464,7 +464,7 @@ class BME280:
 
     def get_status(self, eventtime):
         data = {
-            'temperature': round(self.temp, 2),
+            'temperature': self.temp,
             'pressure': self.pressure
         }
         if self.chip_type in ('BME280', 'BME680'):

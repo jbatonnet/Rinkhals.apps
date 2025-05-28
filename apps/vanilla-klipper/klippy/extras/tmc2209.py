@@ -58,8 +58,7 @@ class TMC2209:
         # Setup mcu communication
         self.fields = tmc.FieldHelper(Fields, tmc2208.SignedFields,
                                       FieldFormatters)
-        self.mcu_tmc = tmc_uart.MCU_TMC_uart(config, Registers, self.fields, 3,
-                                             TMC_FREQUENCY)
+        self.mcu_tmc = tmc_uart.MCU_TMC_uart(config, Registers, self.fields, 3)
         # Setup fields for UART
         self.fields.set_field("pdn_disable", True)
         self.fields.set_field("senddelay", 2) # Avoid tx errors on shared uart
@@ -72,20 +71,18 @@ class TMC2209:
         self.get_phase_offset = cmdhelper.get_phase_offset
         self.get_status = cmdhelper.get_status
         # Setup basic register values
+        self.fields.set_field("pdn_disable", True)
         self.fields.set_field("mstep_reg_select", True)
+        self.fields.set_field("multistep_filt", True)
         tmc.TMCStealthchopHelper(config, self.mcu_tmc, TMC_FREQUENCY)
         # Allow other registers to be set from the config
         set_config_field = self.fields.set_config_field
-        # GCONF
-        set_config_field(config, "multistep_filt", True)
-        # CHOPCONF
         set_config_field(config, "toff", 3)
         set_config_field(config, "hstrt", 5)
         set_config_field(config, "hend", 0)
         set_config_field(config, "tbl", 2)
-        # IHOLDIRUN
         set_config_field(config, "iholddelay", 8)
-        # PWMCONF
+        set_config_field(config, "tpowerdown", 20)
         set_config_field(config, "pwm_ofs", 36)
         set_config_field(config, "pwm_grad", 14)
         set_config_field(config, "pwm_freq", 1)
@@ -93,9 +90,6 @@ class TMC2209:
         set_config_field(config, "pwm_autograd", True)
         set_config_field(config, "pwm_reg", 8)
         set_config_field(config, "pwm_lim", 12)
-        # TPOWERDOWN
-        set_config_field(config, "tpowerdown", 20)
-        # SGTHRS
         set_config_field(config, "sgthrs", 0)
 
 def load_config_prefix(config):

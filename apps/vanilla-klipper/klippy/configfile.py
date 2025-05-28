@@ -3,7 +3,7 @@
 # Copyright (C) 2016-2021  Kevin O'Connor <kevin@koconnor.net>
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
-import sys, os, glob, re, time, logging, configparser, io
+import os, glob, re, time, logging, ConfigParser as configparser, StringIO
 
 error = configparser.Error
 
@@ -80,15 +80,11 @@ class ConfigWrapper:
     def getlists(self, option, default=sentinel, seps=(',',), count=None,
                  parser=str, note_valid=True):
         def lparser(value, pos):
-            if len(value.strip()) == 0:
-                # Return an empty list instead of [''] for empty string
-                parts = []
-            else:
-                parts = [p.strip() for p in value.split(seps[pos])]
             if pos:
                 # Nested list
+                parts = [p.strip() for p in value.split(seps[pos])]
                 return tuple([lparser(p, pos - 1) for p in parts if p])
-            res = [parser(p) for p in parts]
+            res = [parser(p.strip()) for p in value.split(seps[pos])]
             if count is not None and len(res) != count:
                 raise error("Option '%s' in section '%s' must have %d elements"
                             % (option, self.section, count))
@@ -144,7 +140,6 @@ class PrinterConfig:
         self.autosave = None
         self.deprecated = {}
         self.status_raw_config = {}
-        self.status_save_pending = {}
         self.status_settings = {}
         self.status_warnings = []
         self.save_config_pending = False
@@ -155,7 +150,7 @@ class PrinterConfig:
         return self.printer
     def _read_config_file(self, filename):
         try:
-            f = open(filename, 'r')
+            f = open(filename, 'rb')
             data = f.read()
             f.close()
         except:
@@ -216,7 +211,7 @@ class PrinterConfig:
             return
         data = '\n'.join(buffer)
         del buffer[:]
-        sbuffer = io.StringIO(data)
+        sbuffer = StringIO.StringIO(data)
         fileconfig.readfp(sbuffer, filename)
     def _resolve_include(self, source_filename, include_spec, fileconfig,
                          visited):
@@ -260,15 +255,11 @@ class PrinterConfig:
         self._parse_config_buffer(buffer, filename, fileconfig)
         visited.remove(path)
     def _build_config_wrapper(self, data, filename):
-        if sys.version_info.major >= 3:
-            fileconfig = configparser.RawConfigParser(
-                strict=False, inline_comment_prefixes=(';', '#'))
-        else:
-            fileconfig = configparser.RawConfigParser()
+        fileconfig = configparser.RawConfigParser()
         self._parse_config(data, filename, fileconfig, set())
         return ConfigWrapper(self.printer, fileconfig, {}, 'printer')
     def _build_config_string(self, config):
-        sfile = io.StringIO()
+        sfile = StringIO.StringIO()
         config.fileconfig.write(sfile)
         return sfile.getvalue().strip()
     def read_config(self, filename):
@@ -336,36 +327,18 @@ class PrinterConfig:
         return {'config': self.status_raw_config,
                 'settings': self.status_settings,
                 'warnings': self.status_warnings,
-                'save_config_pending': self.save_config_pending,
-                'save_config_pending_items': self.status_save_pending}
+                'save_config_pending': self.save_config_pending}
     # Autosave functions
     def set(self, section, option, value):
         if not self.autosave.fileconfig.has_section(section):
             self.autosave.fileconfig.add_section(section)
         svalue = str(value)
         self.autosave.fileconfig.set(section, option, svalue)
-        pending = dict(self.status_save_pending)
-        if not section in pending or pending[section] is None:
-            pending[section] = {}
-        else:
-            pending[section] = dict(pending[section])
-        pending[section][option] = svalue
-        self.status_save_pending = pending
         self.save_config_pending = True
         logging.info("save_config: set [%s] %s = %s", section, option, svalue)
     def remove_section(self, section):
-        if self.autosave.fileconfig.has_section(section):
-            self.autosave.fileconfig.remove_section(section)
-            pending = dict(self.status_save_pending)
-            pending[section] = None
-            self.status_save_pending = pending
-            self.save_config_pending = True
-        elif (section in self.status_save_pending and
-              self.status_save_pending[section] is not None):
-            pending = dict(self.status_save_pending)
-            del pending[section]
-            self.status_save_pending = pending
-            self.save_config_pending = True
+        self.autosave.fileconfig.remove_section(section)
+        self.save_config_pending = True
     def _disallow_include_conflicts(self, regular_data, cfgname, gcode):
         config = self._build_config_wrapper(regular_data, cfgname)
         for section in self.autosave.fileconfig.sections():
@@ -410,7 +383,7 @@ class PrinterConfig:
         logging.info("SAVE_CONFIG to '%s' (backup in '%s')",
                      cfgname, backup_name)
         try:
-            f = open(temp_name, 'w')
+            f = open(temp_name, 'wb')
             f.write(data)
             f.close()
             os.rename(cfgname, backup_name)

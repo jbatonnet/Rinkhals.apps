@@ -3,7 +3,7 @@
 # Copyright (C) 2016-2020  Kevin O'Connor <kevin@koconnor.net>
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
-from . import pulse_counter
+import pulse_counter
 
 FAN_MIN_TIME = 0.100
 
@@ -30,12 +30,6 @@ class Fan:
         shutdown_power = max(0., min(self.max_power, shutdown_speed))
         self.mcu_fan.setup_start_value(0., shutdown_power)
 
-        self.enable_pin = None
-        enable_pin = config.get('enable_pin', None)
-        if enable_pin is not None:
-            self.enable_pin = ppins.setup_pin('digital_out', enable_pin)
-            self.enable_pin.setup_max_duration(0.)
-
         # Setup tachometer
         self.tachometer = FanTachometer(config)
 
@@ -52,11 +46,6 @@ class Fan:
         if value == self.last_fan_value:
             return
         print_time = max(self.last_fan_time + FAN_MIN_TIME, print_time)
-        if self.enable_pin:
-            if value > 0 and self.last_fan_value == 0:
-                self.enable_pin.set_digital(print_time, 1)
-            elif value == 0 and self.last_fan_value > 0:
-                self.enable_pin.set_digital(print_time, 0)
         if (value and value < self.max_power and self.kick_start_time
             and (not self.last_fan_value or value - self.last_fan_value > .5)):
             # Run fan at full speed for specified kick_start_time

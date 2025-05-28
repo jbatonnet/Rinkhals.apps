@@ -3,7 +3,7 @@
 # Copyright (C) 2018-2021  Kevin O'Connor <kevin@koconnor.net>
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
-import traceback, logging, ast, copy, json
+import traceback, logging, ast, copy
 import jinja2
 
 
@@ -140,17 +140,21 @@ class GCodeMacro:
                                         name, self.cmd_SET_GCODE_VARIABLE,
                                         desc=self.cmd_SET_GCODE_VARIABLE_help)
         self.in_script = False
+        prefix = 'default_parameter_'
+        self.kwparams = {}
+        for option in config.get_prefix_options(prefix):
+            config.deprecate(option)
+            self.kwparams[option[len(prefix):].upper()] = config.get(option)
         self.variables = {}
         prefix = 'variable_'
         for option in config.get_prefix_options(prefix):
             try:
-                literal = ast.literal_eval(config.get(option))
-                json.dumps(literal, separators=(',', ':'))
-                self.variables[option[len(prefix):]] = literal
-            except (SyntaxError, TypeError, ValueError) as e:
+                self.variables[option[len(prefix):]] = ast.literal_eval(
+                    config.get(option))
+            except ValueError as e:
                 raise config.error(
-                    "Option '%s' in section '%s' is not a valid literal: %s" % (
-                        option, config.get_name(), e))
+                    "Option '%s' in section '%s' is not a valid literal" % (
+                        option, config.get_name()))
     def handle_connect(self):
         prev_cmd = self.gcode.register_command(self.alias, None)
         if prev_cmd is None:
@@ -167,23 +171,24 @@ class GCodeMacro:
         variable = gcmd.get('VARIABLE')
         value = gcmd.get('VALUE')
         if variable not in self.variables:
+            if variable in self.kwparams:
+                self.kwparams[variable] = value
+                return
             raise gcmd.error("Unknown gcode_macro variable '%s'" % (variable,))
         try:
             literal = ast.literal_eval(value)
-            json.dumps(literal, separators=(',', ':'))
-        except (SyntaxError, TypeError, ValueError) as e:
-            raise gcmd.error("Unable to parse '%s' as a literal: %s" %
-                             (value, e))
-        v = dict(self.variables)
-        v[variable] = literal
-        self.variables = v
+        except ValueError as e:
+            raise gcmd.error("Unable to parse '%s' as a literal" % (value,))
+        self.variables[variable] = literal
     def cmd(self, gcmd):
         if self.in_script:
             raise gcmd.error("Macro %s called recursively" % (self.alias,))
-        kwparams = dict(self.variables)
+        params = gcmd.get_command_parameters()
+        kwparams = dict(self.kwparams)
+        kwparams.update(params)
+        kwparams.update(self.variables)
         kwparams.update(self.template.create_template_context())
-        kwparams['params'] = gcmd.get_command_parameters()
-        kwparams['rawparams'] = gcmd.get_raw_command_parameters()
+        kwparams['params'] = params
         self.in_script = True
         try:
             self.template.run_gcode_from_command(kwparams)

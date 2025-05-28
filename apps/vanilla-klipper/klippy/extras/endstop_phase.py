@@ -6,8 +6,7 @@
 import math, logging
 import stepper
 
-TRINAMIC_DRIVERS = ["tmc2130", "tmc2208", "tmc2209", "tmc2240", "tmc2660",
-    "tmc5160"]
+TRINAMIC_DRIVERS = ["tmc2130", "tmc2208", "tmc2209", "tmc2660", "tmc5160"]
 
 # Calculate the trigger phase of a stepper motor
 class PhaseCalc:
@@ -55,8 +54,7 @@ class EndstopPhase:
         self.name = config.get_name().split()[1]
         # Obtain step_distance and microsteps from stepper config section
         sconfig = config.getsection(self.name)
-        rotation_dist, steps_per_rotation = stepper.parse_step_distance(sconfig)
-        self.step_dist = rotation_dist / steps_per_rotation
+        self.step_dist = stepper.parse_step_distance(sconfig)
         self.phases = sconfig.getint("microsteps", note_valid=False) * 4
         self.phase_calc = PhaseCalc(self.printer, self.name, self.phases)
         # Register event handlers
