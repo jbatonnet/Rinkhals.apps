@@ -54,6 +54,8 @@ struct step_move {
     int16_t add;
 };
 
+#define HISTORY_EXPIRE (30.0)
+
 struct history_steps {
     struct list_node node;
     uint64_t first_clock, last_clock;
@@ -290,13 +292,6 @@ free_history(struct stepcompress *sc, uint64_t end_clock)
     }
 }
 
-// Expire the stepcompress history older than the given clock
-static void
-stepcompress_history_expire(struct stepcompress *sc, uint64_t end_clock)
-{
-    free_history(sc, end_clock);
-}
-
 // Free memory associated with a 'stepcompress' object
 void __visible
 stepcompress_free(struct stepcompress *sc)
@@ -327,6 +322,9 @@ calc_last_step_print_time(struct stepcompress *sc)
 {
     double lsc = sc->last_step_clock;
     sc->last_step_print_time = sc->mcu_time_offset + (lsc - .5) / sc->mcu_freq;
+
+    if (lsc > sc->mcu_freq * HISTORY_EXPIRE)
+        free_history(sc, lsc - sc->mcu_freq * HISTORY_EXPIRE);
 }
 
 // Set the conversion rate of 'print_time' to mcu clock
@@ -625,21 +623,6 @@ stepcompress_queue_msg(struct stepcompress *sc, uint32_t *data, int len)
     return 0;
 }
 
-// Queue an mcu command that will consume space in the mcu move queue
-int __visible
-stepcompress_queue_mq_msg(struct stepcompress *sc, uint64_t req_clock
-                          , uint32_t *data, int len)
-{
-    int ret = stepcompress_flush(sc, UINT64_MAX);
-    if (ret)
-        return ret;
-
-    struct queue_message *qm = message_alloc_and_encode(data, len);
-    qm->min_clock = qm->req_clock = req_clock;
-    list_add_tail(&qm->node, &sc->msg_queue);
-    return 0;
-}
-
 // Return history of queue_step commands
 int __visible
 stepcompress_extract_old(struct stepcompress *sc, struct pull_history_steps *p
@@ -733,18 +716,6 @@ steppersync_set_time(struct steppersync *ss, double time_offset
     }
 }
 
-// Expire the stepcompress history before the given clock time
-static void
-steppersync_history_expire(struct steppersync *ss, uint64_t end_clock)
-{
-    int i;
-    for (i = 0; i < ss->sc_num; i++)
-    {
-        struct stepcompress *sc = ss->sc_list[i];
-        stepcompress_history_expire(sc, end_clock);
-    }
-}
-
 // Implement a binary heap algorithm to track when the next available
 // 'struct move' in the mcu will be available
 static void
@@ -772,8 +743,7 @@ heap_replace(struct steppersync *ss, uint64_t req_clock)
 
 // Find and transmit any scheduled steps prior to the given 'move_clock'
 int __visible
-steppersync_flush(struct steppersync *ss, uint64_t move_clock
-                  , uint64_t clear_history_clock)
+steppersync_flush(struct steppersync *ss, uint64_t move_clock)
 {
     // Flush each stepcompress to the specified move_clock
     int i;
@@ -821,7 +791,5 @@ steppersync_flush(struct steppersync *ss, uint64_t move_clock
     // Transmit commands
     if (!list_empty(&msgs))
         serialqueue_send_batch(ss->sq, ss->cq, &msgs);
-
-    steppersync_history_expire(ss, clear_history_clock);
     return 0;
 }

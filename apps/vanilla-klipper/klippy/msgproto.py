@@ -1,6 +1,6 @@
 # Protocol definitions for firmware communication
 #
-# Copyright (C) 2016-2024  Kevin O'Connor <kevin@koconnor.net>
+# Copyright (C) 2016-2021  Kevin O'Connor <kevin@koconnor.net>
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
 import json, zlib, logging
@@ -160,8 +160,8 @@ def convert_msg_format(msgformat):
     return msgformat
 
 class MessageFormat:
-    def __init__(self, msgid_bytes, msgformat, enumerations={}):
-        self.msgid_bytes = msgid_bytes
+    def __init__(self, msgid, msgformat, enumerations={}):
+        self.msgid = msgid
         self.msgformat = msgformat
         self.debugformat = convert_msg_format(msgformat)
         self.name = msgformat.split()[0]
@@ -169,17 +169,19 @@ class MessageFormat:
         self.param_types = [t for name, t in self.param_names]
         self.name_to_type = dict(self.param_names)
     def encode(self, params):
-        out = list(self.msgid_bytes)
+        out = []
+        out.append(self.msgid)
         for i, t in enumerate(self.param_types):
             t.encode(out, params[i])
         return out
     def encode_by_name(self, **params):
-        out = list(self.msgid_bytes)
+        out = []
+        out.append(self.msgid)
         for name, t in self.param_names:
             t.encode(out, params[name])
         return out
     def parse(self, s, pos):
-        pos += len(self.msgid_bytes)
+        pos += 1
         out = {}
         for name, t in self.param_names:
             v, pos = t.parse(s, pos)
@@ -196,13 +198,13 @@ class MessageFormat:
 
 class OutputFormat:
     name = '#output'
-    def __init__(self, msgid_bytes, msgformat):
-        self.msgid_bytes = msgid_bytes
+    def __init__(self, msgid, msgformat):
+        self.msgid = msgid
         self.msgformat = msgformat
         self.debugformat = convert_msg_format(msgformat)
         self.param_types = lookup_output_params(msgformat)
     def parse(self, s, pos):
-        pos += len(self.msgid_bytes)
+        pos += 1
         out = []
         for t in self.param_types:
             v, pos = t.parse(s, pos)
@@ -217,7 +219,7 @@ class OutputFormat:
 class UnknownFormat:
     name = '#unknown'
     def parse(self, s, pos):
-        msgid, param_pos = PT_int32().parse(s, pos)
+        msgid = s[pos]
         msg = bytes(bytearray(s))
         return {'#msgid': msgid, '#msg': msg}, len(s)-MESSAGE_TRAILER_SIZE
     def format_params(self, params):
@@ -232,8 +234,7 @@ class MessageParser:
         self.messages = []
         self.messages_by_id = {}
         self.messages_by_name = {}
-        self.msgid_by_format = {}
-        self.msgid_parser = PT_int32()
+        self.msgtag_by_format = {}
         self.config = {}
         self.version = self.build_versions = ""
         self.raw_identify_data = ""
@@ -265,7 +266,7 @@ class MessageParser:
         out = ["seq: %02x" % (msgseq,)]
         pos = MESSAGE_HEADER_SIZE
         while 1:
-            msgid, param_pos = self.msgid_parser.parse(s, pos)
+            msgid = s[pos]
             mid = self.messages_by_id.get(msgid, self.unknown)
             params, pos = mid.parse(s, pos)
             out.append(mid.format_params(params))
@@ -282,14 +283,14 @@ class MessageParser:
             return "%s %s" % (name, msg)
         return str(params)
     def parse(self, s):
-        msgid, param_pos = self.msgid_parser.parse(s, MESSAGE_HEADER_SIZE)
+        msgid = s[MESSAGE_HEADER_SIZE]
         mid = self.messages_by_id.get(msgid, self.unknown)
         params, pos = mid.parse(s, MESSAGE_HEADER_SIZE)
         if pos != len(s)-MESSAGE_TRAILER_SIZE:
             self._error("Extra data at end of message")
         params['#name'] = mid.name
         return params
-    def encode_msgblock(self, seq, cmd):
+    def encode(self, seq, cmd):
         msglen = MESSAGE_MIN + len(cmd)
         seq = (seq & MESSAGE_SEQ_MASK) | MESSAGE_DEST
         out = [msglen, seq] + cmd
@@ -316,15 +317,15 @@ class MessageParser:
             self._error("Command format mismatch: %s vs %s",
                         msgformat, mp.msgformat)
         return mp
-    def lookup_msgid(self, msgformat):
-        msgid = self.msgid_by_format.get(msgformat)
-        if msgid is None:
+    def lookup_msgtag(self, msgformat):
+        msgtag = self.msgtag_by_format.get(msgformat)
+        if msgtag is None:
             self._error("Unknown command: %s", msgformat)
-        return msgid
+        return msgtag
     def create_command(self, msg):
         parts = msg.strip().split()
         if not parts:
-            return []
+            return ""
         msgname = parts[0]
         mp = self.messages_by_name.get(msgname)
         if mp is None:
@@ -371,22 +372,22 @@ class MessageParser:
                 start_value, count = value
                 for i in range(count):
                     enums[enum_root + str(start_enum + i)] = start_value + i
-    def _init_messages(self, messages, command_ids=[], output_ids=[]):
-        for msgformat, msgid in messages.items():
+    def _init_messages(self, messages, command_tags=[], output_tags=[]):
+        for msgformat, msgtag in messages.items():
             msgtype = 'response'
-            if msgid in command_ids:
+            if msgtag in command_tags:
                 msgtype = 'command'
-            elif msgid in output_ids:
+            elif msgtag in output_tags:
                 msgtype = 'output'
-            self.messages.append((msgid, msgtype, msgformat))
-            self.msgid_by_format[msgformat] = msgid
-            msgid_bytes = []
-            self.msgid_parser.encode(msgid_bytes, msgid)
+            self.messages.append((msgtag, msgtype, msgformat))
+            if msgtag < -32 or msgtag > 95:
+                self._error("Multi-byte msgtag not supported")
+            self.msgtag_by_format[msgformat] = msgtag
+            msgid = msgtag & 0x7f
             if msgtype == 'output':
-                self.messages_by_id[msgid] = OutputFormat(msgid_bytes,
-                                                          msgformat)
+                self.messages_by_id[msgid] = OutputFormat(msgid, msgformat)
             else:
-                msg = MessageFormat(msgid_bytes, msgformat, self.enumerations)
+                msg = MessageFormat(msgid, msgformat, self.enumerations)
                 self.messages_by_id[msgid] = msg
                 self.messages_by_name[msg.name] = msg
     def process_identify(self, data, decompress=True):

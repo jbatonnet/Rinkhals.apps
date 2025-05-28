@@ -1,6 +1,6 @@
 # BLTouch support
 #
-# Copyright (C) 2018-2024  Kevin O'Connor <kevin@koconnor.net>
+# Copyright (C) 2018-2021  Kevin O'Connor <kevin@koconnor.net>
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
 import logging
@@ -23,9 +23,13 @@ Commands = {
 }
 
 # BLTouch "endstop" wrapper
-class BLTouchProbe:
+class BLTouchEndstopWrapper:
     def __init__(self, config):
         self.printer = config.get_printer()
+        self.printer.register_event_handler("klippy:connect",
+                                            self.handle_connect)
+        self.printer.register_event_handler('klippy:mcu_identify',
+                                            self.handle_mcu_identify)
         self.position_endstop = config.getfloat('z_offset', minval=0.)
         self.stow_on_each_sample = config.getboolean('stow_on_each_sample',
                                                      True)
@@ -40,9 +44,12 @@ class BLTouchProbe:
         self.next_cmd_time = self.action_end_time = 0.
         self.finish_home_complete = self.wait_trigger_complete = None
         # Create an "endstop" object to handle the sensor pin
-        self.mcu_endstop = ppins.setup_pin('endstop', config.get('sensor_pin'))
+        pin = config.get('sensor_pin')
+        pin_params = ppins.lookup_pin(pin, can_invert=True, can_pullup=True)
+        mcu = pin_params['chip']
+        self.mcu_endstop = mcu.setup_pin('endstop', pin_params)
         # output mode
-        omodes = ['5V', 'OD', None]
+        omodes = {'5V': '5V', 'OD': 'OD', None: None}
         self.output_mode = config.getchoice('set_output_mode', omodes, None)
         # Setup for sensor test
         self.next_test_time = 0.
@@ -58,30 +65,19 @@ class BLTouchProbe:
         self.get_steppers = self.mcu_endstop.get_steppers
         self.home_wait = self.mcu_endstop.home_wait
         self.query_endstop = self.mcu_endstop.query_endstop
-        # multi probes state
-        self.multi = 'OFF'
-        # Common probe implementation helpers
-        self.cmd_helper = probe.ProbeCommandHelper(
-            config, self, self.mcu_endstop.query_endstop)
-        self.probe_offsets = probe.ProbeOffsetsHelper(config)
-        self.probe_session = probe.ProbeSessionHelper(config, self)
         # Register BLTOUCH_DEBUG command
         self.gcode = self.printer.lookup_object('gcode')
         self.gcode.register_command("BLTOUCH_DEBUG", self.cmd_BLTOUCH_DEBUG,
                                     desc=self.cmd_BLTOUCH_DEBUG_help)
         self.gcode.register_command("BLTOUCH_STORE", self.cmd_BLTOUCH_STORE,
                                     desc=self.cmd_BLTOUCH_STORE_help)
-        # Register events
-        self.printer.register_event_handler("klippy:connect",
-                                            self.handle_connect)
-    def get_probe_params(self, gcmd=None):
-        return self.probe_session.get_probe_params(gcmd)
-    def get_offsets(self):
-        return self.probe_offsets.get_offsets()
-    def get_status(self, eventtime):
-        return self.cmd_helper.get_status(eventtime)
-    def start_probe_session(self, gcmd):
-        return self.probe_session.start_probe_session(gcmd)
+        # multi probes state
+        self.multi = 'OFF'
+    def handle_mcu_identify(self):
+        kin = self.printer.lookup_object('toolhead').get_kinematics()
+        for stepper in kin.get_steppers():
+            if stepper.is_active_axis('z'):
+                self.add_stepper(stepper)
     def handle_connect(self):
         self.sync_mcu_print_time()
         self.next_cmd_time += 0.200
@@ -120,11 +116,7 @@ class BLTouchProbe:
         self.mcu_endstop.home_start(self.action_end_time, ENDSTOP_SAMPLE_TIME,
                                     ENDSTOP_SAMPLE_COUNT, ENDSTOP_REST_TIME,
                                     triggered=triggered)
-        try:
-            trigger_time = self.mcu_endstop.home_wait(
-                self.action_end_time + 0.100)
-        except self.printer.command_error as e:
-            return False
+        trigger_time = self.mcu_endstop.home_wait(self.action_end_time + 0.100)
         return trigger_time > 0.
     def raise_probe(self):
         self.sync_mcu_print_time()
@@ -191,9 +183,6 @@ class BLTouchProbe:
         self.verify_raise_probe()
         self.sync_print_time()
         self.multi = 'OFF'
-    def probing_move(self, pos, speed):
-        phoming = self.printer.lookup_object('homing')
-        return phoming.probing_move(self, pos, speed)
     def probe_prepare(self, hmove):
         if self.multi == 'OFF' or self.multi == 'FIRST':
             self.lower_probe()
@@ -282,6 +271,6 @@ class BLTouchProbe:
         self.sync_print_time()
 
 def load_config(config):
-    blt = BLTouchProbe(config)
-    config.get_printer().add_object('probe', blt)
+    blt = BLTouchEndstopWrapper(config)
+    config.get_printer().add_object('probe', probe.PrinterProbe(config, blt))
     return blt

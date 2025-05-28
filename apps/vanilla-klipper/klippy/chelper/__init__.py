@@ -49,8 +49,6 @@ defs_stepcompress = """
         , uint64_t clock);
     int stepcompress_queue_msg(struct stepcompress *sc
         , uint32_t *data, int len);
-    int stepcompress_queue_mq_msg(struct stepcompress *sc, uint64_t req_clock
-        , uint32_t *data, int len);
     int stepcompress_extract_old(struct stepcompress *sc
         , struct pull_history_steps *p, int max
         , uint64_t start_clock, uint64_t end_clock);
@@ -60,8 +58,7 @@ defs_stepcompress = """
     void steppersync_free(struct steppersync *ss);
     void steppersync_set_time(struct steppersync *ss
         , double time_offset, double mcu_freq);
-    int steppersync_flush(struct steppersync *ss, uint64_t move_clock
-        , uint64_t clear_history_clock);
+    int steppersync_flush(struct steppersync *ss, uint64_t move_clock);
 """
 
 defs_itersolve = """
@@ -95,8 +92,7 @@ defs_trapq = """
         , double start_pos_x, double start_pos_y, double start_pos_z
         , double axes_r_x, double axes_r_y, double axes_r_z
         , double start_v, double cruise_v, double accel);
-    void trapq_finalize_moves(struct trapq *tq, double print_time
-        , double clear_history_time);
+    void trapq_finalize_moves(struct trapq *tq, double print_time);
     void trapq_set_position(struct trapq *tq, double print_time
         , double pos_x, double pos_y, double pos_z);
     int trapq_extract_old(struct trapq *tq, struct pull_move *p, int max
@@ -142,9 +138,8 @@ defs_kin_winch = """
 
 defs_kin_extruder = """
     struct stepper_kinematics *extruder_stepper_alloc(void);
-    void extruder_stepper_free(struct stepper_kinematics *sk);
     void extruder_set_pressure_advance(struct stepper_kinematics *sk
-        , double print_time, double pressure_advance, double smooth_time);
+        , double pressure_advance, double smooth_time);
 """
 
 defs_kin_shaper = """

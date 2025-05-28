@@ -118,7 +118,7 @@ Fields["DRV_STATUS"] = {
     "s2vsb":                    0x01 << 13,
     "stealth":                  0x01 << 14,
     "fsactive":                 0x01 << 15,
-    "cs_actual":                0x1F << 16,
+    "csactual":                 0xFF << 16,
     "stallguard":               0x01 << 24,
     "ot":                       0x01 << 25,
     "otpw":                     0x01 << 26,
@@ -242,9 +242,6 @@ Fields["TCOOLTHRS"] = {
 Fields["TSTEP"] = {
     "tstep":                    0xfffff << 0
 }
-Fields["THIGH"] = {
-    "thigh":                    0xfffff << 0
-}
 
 SignedFields = ["cur_a", "cur_b", "sgt", "xactual", "vactual", "pwm_scale_auto"]
 
@@ -260,7 +257,7 @@ FieldFormatters.update({
 ######################################################################
 
 VREF = 0.325
-MAX_CURRENT = 10.000 # Maximum dependent on board, but 10 is safe sanity check
+MAX_CURRENT = 3.000
 
 class TMC5160CurrentHelper:
     def __init__(self, config, mcu_tmc):
@@ -338,10 +335,7 @@ class TMC5160:
         self.get_status = cmdhelper.get_status
         # Setup basic register values
         tmc.TMCWaveTableHelper(config, self.mcu_tmc)
-        tmc.TMCStealthchopHelper(config, self.mcu_tmc)
-        tmc.TMCVcoolthrsHelper(config, self.mcu_tmc)
-        tmc.TMCVhighHelper(config, self.mcu_tmc)
-        # Allow other registers to be set from the config
+        tmc.TMCStealthchopHelper(config, self.mcu_tmc, TMC_FREQUENCY)
         set_config_field = self.fields.set_config_field
         #   GCONF
         set_config_field(config, "multistep_filt", True)

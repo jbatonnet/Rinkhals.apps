@@ -30,9 +30,11 @@ debug() {
 
     kill_by_name gklib
 
+    # Create Python venv
     python -m venv --without-pip $APP_ROOT
     . bin/activate
 
+    # Start OctoApp
     cd klippy
     python -m klippy -a /tmp/unix_uds1 $@
 }

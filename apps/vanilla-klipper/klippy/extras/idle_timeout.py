@@ -45,7 +45,7 @@ class IdleTimeout:
         self.state = "Printing"
         try:
             script = self.idle_gcode.render()
-            self.gcode.run_script(script)
+            res = self.gcode.run_script(script)
         except:
             logging.exception("idle timeout gcode execution")
             self.state = "Ready"
