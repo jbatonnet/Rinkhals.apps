@@ -28,11 +28,15 @@ download_tailscale() {
 
     log "Detected architecture: $ARCH"
 
-    # Retrieve the latest Tailscale version from GitHub
-    LATEST=$(curl -s https://api.github.com/repos/tailscale/tailscale/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+    BINARY_PAGE=$(curl -s https://pkgs.tailscale.com/stable/?v=latest)
+    HREF=$(echo "$BINARY_PAGE" | grep -o "tailscale_[^\"']*_${ARCH}\.tgz" | head -n1)
+
+    # Retrieve the latest Tailscale version from pkgs.tailscale.com
+    LATEST=$(echo "$HREF" | sed -E 's/tailscale_(.*)_'$ARCH'\.tgz/\1/')
     if [ -z "$LATEST" ]; then
         log "Unable to fetch the latest version." && return 1
     fi
+
     log "Latest Tailscale version: $LATEST"
 
     # Check if we already have this version
@@ -42,7 +46,7 @@ download_tailscale() {
     fi
 
     # Construct the download URL for the static binary package
-    URL="https://pkgs.tailscale.com/stable/tailscale_${LATEST}_${ARCH}.tgz"
+    URL="https://pkgs.tailscale.com/stable/${HREF}"
     log "Downloading from: $URL"
     
     # Create a temporary directory
