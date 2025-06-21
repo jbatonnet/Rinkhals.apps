@@ -9,5 +9,12 @@
     "requirements": {
         "cpu": 5,
         "memory": 20
+    },
+    
+    "properties": {
+        "account_login": {
+            "display": "Connect to Tailscale",
+            "type": "qr"
+        }
     }
 }
