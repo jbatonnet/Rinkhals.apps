@@ -16,67 +16,6 @@ mkdir -p "$TAILSCALE_BIN_DIR"
 mkdir -p "$TAILSCALE_DATA_DIR"
 mkdir -p "$TAILSCALE_RUN_DIR"
 
-download_tailscale() {
-    # Detect system architecture
-    ARCH=$(uname -m)
-    case "$ARCH" in
-        x86_64) ARCH="amd64" ;;
-        armv7l) ARCH="arm" ;;
-        aarch64) ARCH="arm64" ;;
-        *) log "Unsupported architecture: $ARCH" && return 1 ;;
-    esac
-
-    log "Detected architecture: $ARCH"
-
-    BINARY_PAGE=$(curl -s https://pkgs.tailscale.com/stable/?v=latest)
-    HREF=$(echo "$BINARY_PAGE" | grep -o "tailscale_[^\"']*_${ARCH}\.tgz" | head -n1)
-
-    # Retrieve the latest Tailscale version from pkgs.tailscale.com
-    LATEST=$(echo "$HREF" | sed -E 's/tailscale_(.*)_'$ARCH'\.tgz/\1/')
-    if [ -z "$LATEST" ]; then
-        log "Unable to fetch the latest version." && return 1
-    fi
-
-    log "Latest Tailscale version: $LATEST"
-
-    # Check if we already have this version
-    if [ -f "$TAILSCALE_BIN_DIR/version" ] && [ "$(cat "$TAILSCALE_BIN_DIR/version")" = "$LATEST" ]; then
-        log "Tailscale version $LATEST already installed."
-        return 0
-    fi
-
-    # Construct the download URL for the static binary package
-    URL="https://pkgs.tailscale.com/stable/${HREF}"
-    log "Downloading from: $URL"
-    
-    # Create a temporary directory
-    TMP_DIR="/tmp/tailscale-download"
-    mkdir -p "$TMP_DIR"
-    
-    # Download and extract in one step to save space
-    curl -L "$URL" | tar -xz -C "$TMP_DIR"
-
-    # Determine the first directory from the extracted files
-    DIR=$(find "$TMP_DIR" -mindepth 1 -maxdepth 1 -type d | head -1)
-    
-    if [ -f "$DIR/tailscale" ] && [ -f "$DIR/tailscaled" ]; then
-        log "Installing Tailscale binaries..."
-        cp "$DIR/tailscale" "$TAILSCALE_BIN_DIR/"
-        cp "$DIR/tailscaled" "$TAILSCALE_BIN_DIR/"
-        chmod +x "$TAILSCALE_BIN_DIR/tailscale" "$TAILSCALE_BIN_DIR/tailscaled"
-        echo "$LATEST" > "$TAILSCALE_BIN_DIR/version"
-        log "Tailscale binaries installed successfully."
-    else
-        log "Unexpected archive structure: binaries not found in directory '$DIR'."
-        rm -rf "$TMP_DIR"
-        return 1
-    fi
-
-    # Clean up
-    rm -rf "$TMP_DIR"
-    return 0
-}
-
 status() {
     if [ -f "$TAILSCALE_PID_FILE" ]; then
         PID=$(cat "$TAILSCALE_PID_FILE" 2>/dev/null)
@@ -102,11 +41,9 @@ start() {
         fi
     fi
     
-    # Ensure binaries exist
-    if [ ! -f "$TAILSCALE_BIN_DIR/tailscaled" ] || [ ! -f "$TAILSCALE_BIN_DIR/tailscale" ]; then
-        log "Tailscale binaries not found, downloading..."
-        download_tailscale || return 1
-    fi
+    # Check binary permissions
+    chmod +x $TAILSCALE_BIN_DIR/tailscale
+    chmod +x $TAILSCALE_BIN_DIR/tailscaled
     
     TAILSCALE_VERSION=$([ -f "$TAILSCALE_BIN_DIR/version" ] && cat "$TAILSCALE_BIN_DIR/version" || echo "N/A")
     
@@ -188,11 +125,7 @@ stop() {
 }
 
 version() {
-    if [ -f "$TAILSCALE_BIN_DIR/version" ]; then
-        cat "$TAILSCALE_BIN_DIR/version"
-    else
-        echo "0.0.0"  # Default version if not installed yet
-    fi
+    cat "$TAILSCALE_BIN_DIR/version"
 }
 
 case "$1" in
